@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { RefreshCw, CalendarCheck, History, Car, Tag, Wrench } from 'lucide-react'
+import { RefreshCw, CalendarCheck, History, Car, Tag, Wrench, ArrowUpRight, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import TombolBayar from '../../components/TombolBayar'
 
 // ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
-function formatTanggal(tanggalStr) {
-  if (!tanggalStr) return '-'
-  const d = new Date(tanggalStr)
-  return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-}
 function formatTanggalSingkat(tanggalStr) {
   if (!tanggalStr) return '-'
   const d = new Date(tanggalStr)
@@ -84,8 +79,6 @@ export default function DashboardCustomer() {
           .eq('is_active', true)
           .gte('berlaku_sampai', todayStr)
           .order('nilai', { ascending: false }),
-        // Dipakai buat ngecek booking mana yang udah lunas, biar tombol "Bayar"
-        // nggak muncul lagi kalau transaksinya udah berhasil
         supabase.from('transaksi').select('booking_id, status').eq('customer_id', user.id),
       ])
 
@@ -142,8 +135,7 @@ export default function DashboardCustomer() {
 
   return (
     <div>
-      {/* Topbar */}
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
             Selamat datang kembali{nama ? `, ${nama.split(' ')[0]}` : ''}!
@@ -153,43 +145,44 @@ export default function DashboardCustomer() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm hover:text-slate-800"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-100 transition hover:text-indigo-600 hover:ring-indigo-100"
             title="Refresh data"
           >
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
           </button>
-          <div className="h-9 w-9 rounded-full bg-indigo-900" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-900 text-sm font-semibold text-white">
+            {(nama || '?')[0]?.toUpperCase()}
+          </div>
         </div>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
-          Gagal memuat sebagian data: {error}
+        <div className="mb-5 flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
+          <AlertTriangle size={16} /> Gagal memuat sebagian data: {error}
         </div>
       )}
 
-      {/* Stat cards */}
-      <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<CalendarCheck size={16} />} iconBg="bg-blue-100" label="Booking Aktif" value={bookingAktifCount} link="/customer/booking" linkText="Lihat detail" />
-        <StatCard icon={<History size={16} />} iconBg="bg-indigo-100" label="Riwayat Servis" value={riwayatCount} link="/customer/riwayat" linkText="Lihat riwayat" />
-        <StatCard icon={<Car size={16} />} iconBg="bg-emerald-100" label="Kendaraan" value={kendaraanCount} link="/customer/kendaraan" linkText="Kelola kendaraan" />
-        <StatCard icon={<Tag size={16} />} iconBg="bg-amber-100" label="Promo Aktif" value={promoAktifCount} link="/customer/promo" linkText="Lihat promo" />
+      <section className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={<CalendarCheck size={20} />} accent="blue" label="Booking Aktif" value={bookingAktifCount} link="/customer/booking" linkText="Lihat detail" />
+        <StatCard icon={<History size={20} />} accent="indigo" label="Riwayat Servis" value={riwayatCount} link="/customer/riwayat" linkText="Lihat riwayat" />
+        <StatCard icon={<Car size={20} />} accent="emerald" label="Kendaraan" value={kendaraanCount} link="/customer/kendaraan" linkText="Kelola kendaraan" />
+        <StatCard icon={<Tag size={20} />} accent="amber" label="Promo Aktif" value={promoAktifCount} link="/customer/promo" linkText="Lihat promo" />
       </section>
 
-      {/* Main grid */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Booking berikutnya */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Booking Berikutnya</h2>
-            <a href="/customer/booking" className="text-xs font-medium text-indigo-600 hover:underline">Lihat Semua</a>
+            <a href="/customer/booking" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline">
+              Lihat Semua <ArrowUpRight size={12} />
+            </a>
           </div>
 
           {bookingBerikutnya ? (
             <>
               <div className="flex items-start gap-3 rounded-xl border border-slate-100 p-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                  <Wrench size={16} />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                  <Wrench size={18} />
                 </span>
                 <div className="flex-1">
                   <div className="mb-1 flex items-center justify-between">
@@ -244,10 +237,10 @@ export default function DashboardCustomer() {
           )}
         </div>
 
-        {/* Promo */}
-        <div className="rounded-2xl bg-[#12123a] p-5 text-white shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl bg-[#12123a] p-6 text-white shadow-sm">
+          <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-amber-400/10 blur-2xl" />
           {promoUnggulan ? (
-            <>
+            <div className="relative">
               <p className="mb-2 text-xs text-white/50">Promo Untuk Anda</p>
               <p className="mb-2 text-2xl font-extrabold text-amber-400">
                 {promoUnggulan.judul}
@@ -257,25 +250,28 @@ export default function DashboardCustomer() {
                 Berlaku hingga {formatTanggalSingkat(promoUnggulan.berlaku_sampai)}
                 {promoUnggulan.min_transaksi ? ` · min. transaksi ${formatRupiah(promoUnggulan.min_transaksi)}` : ''}
               </p>
-              <a href="/customer/promo" className="text-xs font-semibold text-white hover:underline">Lihat Promo →</a>
-            </>
+              <a href="/customer/promo" className="flex items-center gap-1 text-xs font-semibold text-white hover:underline">
+                Lihat Promo <ArrowUpRight size={12} />
+              </a>
+            </div>
           ) : (
-            <p className="text-sm text-white/50">Belum ada promo aktif saat ini.</p>
+            <p className="relative text-sm text-white/50">Belum ada promo aktif saat ini.</p>
           )}
         </div>
 
-        {/* Riwayat servis terakhir */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Riwayat Servis Terakhir</h2>
-            <a href="/customer/riwayat" className="text-xs font-medium text-indigo-600 hover:underline">Lihat Semua Riwayat</a>
+            <a href="/customer/riwayat" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline">
+              Lihat Semua <ArrowUpRight size={12} />
+            </a>
           </div>
           {riwayatTerakhir.length === 0 ? (
-            <p className="text-sm text-slate-400">Belum ada riwayat servis.</p>
+            <p className="py-6 text-center text-sm text-slate-400">Belum ada riwayat servis.</p>
           ) : (
             <ul className="divide-y divide-slate-50">
               {riwayatTerakhir.map((r) => (
-                <li key={r.id} className="flex items-center justify-between py-2.5">
+                <li key={r.id} className="flex items-center justify-between py-3">
                   <div>
                     <p className="text-sm font-medium text-slate-900">{r.layanan?.nama ?? '-'}</p>
                     <p className="text-xs text-slate-400">
@@ -292,9 +288,8 @@ export default function DashboardCustomer() {
           )}
         </div>
 
-        {/* Status kendaraan */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Status Kendaraan</h2>
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <h2 className="mb-4 text-sm font-semibold text-slate-900">Status Kendaraan</h2>
           {kendaraanUtama ? (
             <>
               {kendaraanUtama.foto_url ? (
@@ -334,13 +329,19 @@ export default function DashboardCustomer() {
   )
 }
 
-function StatCard({ icon, iconBg, label, value, link, linkText }) {
+function StatCard({ icon, label, value, link, linkText, accent = 'indigo' }) {
+  const accents = {
+    blue: 'bg-blue-50 text-blue-600',
+    indigo: 'bg-indigo-50 text-indigo-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    amber: 'bg-amber-50 text-amber-600',
+  }
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm">
-      <div className={`mb-3 flex h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>{icon}</div>
-      <p className="mb-1 text-xs text-slate-400">{label}</p>
-      <p className="mb-2 text-2xl font-bold text-slate-900">{value}</p>
-      <a href={link} className="text-xs font-medium text-indigo-600 hover:underline">{linkText} →</a>
+    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100 transition hover:shadow-md">
+      <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</span>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="mb-2 mt-1 text-2xl font-bold text-slate-900">{value}</p>
+      <a href={link} className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline">{linkText} <ArrowUpRight size={11} /></a>
     </div>
   )
 }

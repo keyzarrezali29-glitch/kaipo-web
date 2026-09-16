@@ -6,6 +6,8 @@ import AdminLayout from './pages/admin/AdminLayout'
 import DashboardAdmin from './pages/admin/DashboardAdmin'
 import BookingServis from './pages/admin/BookingServis'
 import DataCustomer from './pages/admin/DataCustomer'
+import DetailCustomer from './pages/admin/DetailCustomer'
+import EditCustomer from './pages/admin/EditCustomer'
 import DataMekanik from './pages/admin/DataMekanik'
 import EditMekanik from './pages/admin/Editmekanik'
 import ProfilMekanikAdmin from './pages/admin/Profilmekanikadmin'
@@ -13,6 +15,7 @@ import DataKendaraan from './pages/admin/DataKendaraan'
 import DataServis from './pages/admin/DataServis'
 import ProdukSparepart from './pages/admin/ProdukSparepart'
 import Transaksi from './pages/admin/Transaksi'
+import DetailTransaksi from './pages/admin/DetailTransaksi'
 import Laporan from './pages/admin/Laporan'
 import Pengaturan from './pages/admin/Pengaturan'
 import MekanikLayout from './pages/mekanik/MekanikLayout'
@@ -33,6 +36,7 @@ import CustomerBantuan from './pages/customer/CustomerBantuan'
 import DetailLayanan from './pages/admin/DetailLayanan'
 import AdminPromo from './pages/admin/AdminPromo'
 import DetailPekerjaan from './pages/mekanik/DetailPekerjaan'
+
 function App() {
   return (
     <Routes>
@@ -44,6 +48,8 @@ function App() {
         <Route path="dashboard" element={<DashboardAdmin />} />
         <Route path="booking" element={<BookingServis />} />
         <Route path="customer" element={<DataCustomer />} />
+        <Route path="customer/:id" element={<DetailCustomer />} />
+        <Route path="customer/:id/edit" element={<EditCustomer />} />
         <Route path="mekanik" element={<DataMekanik />} />
         <Route path="mekanik/:id/edit" element={<EditMekanik />} />
         <Route path="mekanik/:id" element={<ProfilMekanikAdmin />} />
@@ -51,6 +57,7 @@ function App() {
         <Route path="servis" element={<DataServis />} />
         <Route path="produk" element={<ProdukSparepart />} />
         <Route path="transaksi" element={<Transaksi />} />
+        <Route path="transaksi/:id" element={<DetailTransaksi />} />
         <Route path="laporan" element={<Laporan />} />
         <Route path="pengaturan" element={<Pengaturan />} />
         <Route path="servis/:id" element={<DetailLayanan />} />
@@ -75,7 +82,6 @@ function App() {
         <Route path="pengaturan" element={<CustomerPengaturan />} />
         <Route path="pesan" element={<CustomerPesan />} />
         <Route path="bantuan" element={<CustomerBantuan />} />
-        
       </Route>
     </Routes>
   )

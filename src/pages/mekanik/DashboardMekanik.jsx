@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   RefreshCw, Wrench, Clock, CheckCircle2, Settings2, Zap, Disc3, Droplet, Car, Wind, Sparkles,
-  CalendarClock, Package, Timer,
+  Package, Timer, ArrowUpRight, AlertTriangle,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -91,7 +91,6 @@ export default function DashboardMekanik() {
       ] = await Promise.all([
         supabase.from('booking').select('id', { count: 'exact', head: true }).eq('mekanik_id', user.id).eq('tanggal', todayStr),
         supabase.from('booking').select('id', { count: 'exact', head: true }).eq('mekanik_id', user.id).eq('status', 'diproses'),
-        // Ambil semua booking selesai bulan ini punya mekanik ini (dipakai buat 3 metrik ringkasan sekaligus)
         supabase
           .from('booking')
           .select('id')
@@ -148,7 +147,6 @@ export default function DashboardMekanik() {
         const totalSparepart = (sparepartRes.data ?? []).reduce((sum, s) => sum + (s.qty || 0), 0)
         setSparepartTerpakai(totalSparepart)
 
-        // Hitung rata-rata durasi dari status 'diproses' -> 'selesai' per booking, dari log asli
         const perBooking = new Map()
         for (const log of logRes.data ?? []) {
           if (!perBooking.has(log.booking_id)) perBooking.set(log.booking_id, {})
@@ -159,7 +157,7 @@ export default function DashboardMekanik() {
         const durasiList = []
         for (const { diproses, selesai } of perBooking.values()) {
           if (diproses && selesai && selesai > diproses) {
-            durasiList.push((selesai - diproses) / 60000) // ke menit
+            durasiList.push((selesai - diproses) / 60000)
           }
         }
         const rataRata = durasiList.length > 0 ? durasiList.reduce((a, b) => a + b, 0) / durasiList.length : 0
@@ -201,14 +199,12 @@ export default function DashboardMekanik() {
     return <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-400">Memuat dashboard...</div>
   }
 
-  // Cuma pekerjaan PALING DEPAN yang berstatus "dijadwalkan" yang bisa langsung dimulai;
-  // sisanya (walau statusnya juga dijadwalkan) cuma bisa dilihat detailnya dulu.
   const idDijadwalkanPertama = antrian.find((j) => j.status === 'dijadwalkan')?.id
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
+    <div className="min-h-full px-2 py-2">
       {/* Topbar */}
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
             Selamat datang{namaMekanik ? `, ${namaMekanik.split(' ')[0]}` : ''}!
@@ -221,45 +217,47 @@ export default function DashboardMekanik() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm hover:text-slate-800"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-100 transition hover:text-indigo-600 hover:ring-indigo-100"
             title="Refresh data"
           >
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
           </button>
-          <div className="h-9 w-9 rounded-full bg-indigo-900" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-900 text-sm font-semibold text-white">
+            {(namaMekanik || '?')[0]?.toUpperCase()}
+          </div>
         </div>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
-          Gagal memuat sebagian data: {error}
+        <div className="mb-5 flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
+          <AlertTriangle size={16} /> Gagal memuat sebagian data: {error}
         </div>
       )}
 
       {/* Stat cards */}
-      <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard icon={<Wrench size={16} />} iconBg="bg-indigo-100" label="Pekerjaan Hari Ini" value={pekerjaanHariIni} />
-        <StatCard icon={<Clock size={16} />} iconBg="bg-amber-100" label="Sedang Dikerjakan" value={sedangDikerjakan} />
-        <StatCard icon={<CheckCircle2 size={16} />} iconBg="bg-emerald-100" label="Selesai Bulan Ini" value={selesaiBulanIni} />
+      <section className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <StatCard icon={<Wrench size={20} />} accent="indigo" label="Pekerjaan Hari Ini" value={pekerjaanHariIni} />
+        <StatCard icon={<Clock size={20} />} accent="amber" label="Sedang Dikerjakan" value={sedangDikerjakan} />
+        <StatCard icon={<CheckCircle2 size={20} />} accent="emerald" label="Selesai Bulan Ini" value={selesaiBulanIni} />
       </section>
 
       {/* Antrian pekerjaan */}
-      <div className="mb-4 rounded-2xl bg-white p-5 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
+      <div className="mb-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-900">Antrian Pekerjaan Berikutnya</h2>
-          <Link to="/mekanik/pekerjaan" className="text-xs font-medium text-indigo-600 hover:underline">
-            Lihat Semua →
+          <Link to="/mekanik/pekerjaan" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline">
+            Lihat Semua <ArrowUpRight size={12} />
           </Link>
         </div>
 
         {antrian.length === 0 ? (
-          <p className="text-sm text-slate-400">Belum ada pekerjaan yang ditugaskan.</p>
+          <p className="py-6 text-center text-sm text-slate-400">Belum ada pekerjaan yang ditugaskan.</p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2.5">
             {antrian.map((job) => (
-              <li key={job.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <li key={job.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 p-4 transition hover:bg-slate-50/70 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                     <IconFor name={job.layanan?.icon} />
                   </span>
                   <div>
@@ -280,7 +278,7 @@ export default function DashboardMekanik() {
                     <button
                       onClick={() => handleUpdateStatus(job.id, 'selesai')}
                       disabled={updatingId === job.id}
-                      className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                      className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-800 disabled:opacity-50"
                     >
                       {updatingId === job.id ? '...' : 'Update Status'}
                     </button>
@@ -289,7 +287,7 @@ export default function DashboardMekanik() {
                     <button
                       onClick={() => handleUpdateStatus(job.id, 'diproses')}
                       disabled={updatingId === job.id}
-                      className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                      className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-800 disabled:opacity-50"
                     >
                       {updatingId === job.id ? '...' : 'Mulai Servis'}
                     </button>
@@ -310,21 +308,21 @@ export default function DashboardMekanik() {
       </div>
 
       {/* Riwayat + Ringkasan bulan ini */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Riwayat Pekerjaan Terakhir</h2>
-            <Link to="/mekanik/riwayat" className="text-xs font-medium text-indigo-600 hover:underline">
-              Lihat Semua →
+            <Link to="/mekanik/riwayat" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline">
+              Lihat Semua <ArrowUpRight size={12} />
             </Link>
           </div>
           {riwayat.length === 0 ? (
-            <p className="text-sm text-slate-400">Belum ada riwayat pekerjaan.</p>
+            <p className="py-6 text-center text-sm text-slate-400">Belum ada riwayat pekerjaan.</p>
           ) : (
             <ul className="divide-y divide-slate-50">
               {riwayat.map((r) => (
-                <li key={r.id} className="flex items-center gap-3 py-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                <li key={r.id} className="flex items-center gap-3 py-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                     <IconFor name={r.layanan?.icon} size={14} />
                   </span>
                   <div className="flex-1">
@@ -340,15 +338,15 @@ export default function DashboardMekanik() {
           )}
         </div>
 
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Ringkasan Bulan Ini</h2>
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <h2 className="mb-4 text-sm font-semibold text-slate-900">Ringkasan Bulan Ini</h2>
           <ul className="divide-y divide-slate-50">
             <RingkasanRow icon={<CheckCircle2 size={15} className="text-emerald-600" />} label="Servis Diselesaikan" value={selesaiBulanIni} />
             <RingkasanRow icon={<Package size={15} className="text-indigo-600" />} label="Sparepart Terpakai" value={sparepartTerpakai} />
             <RingkasanRow icon={<Timer size={15} className="text-amber-600" />} label="Rata-rata Waktu Servis" value={formatDurasi(rataRataMenit)} />
           </ul>
           {rataRataMenit === 0 && selesaiBulanIni > 0 && (
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-3 text-xs text-slate-400">
               * Rata-rata waktu belum bisa dihitung — belum ada riwayat status "Dikerjakan → Selesai" yang lengkap di log bulan ini.
             </p>
           )}
@@ -358,12 +356,17 @@ export default function DashboardMekanik() {
   )
 }
 
-function StatCard({ icon, iconBg, label, value }) {
+function StatCard({ icon, label, value, accent = 'indigo' }) {
+  const accents = {
+    indigo: 'bg-indigo-50 text-indigo-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    amber: 'bg-amber-50 text-amber-600',
+  }
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm">
-      <div className={`mb-3 flex h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>{icon}</div>
-      <p className="mb-1 text-xs text-slate-400">{label}</p>
-      <p className="text-xl font-bold text-slate-900">{value}</p>
+    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100 transition hover:shadow-md">
+      <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</span>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
     </div>
   )
 }

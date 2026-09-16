@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Search, Eye, Pencil, X, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -33,8 +34,8 @@ export default function DataCustomer() {
   const [error, setError] = useState(null)
   const [customers, setCustomers] = useState([])
 
-  const [statusFilter, setStatusFilter] = useState('semua') // 'semua' | 'aktif' | 'nonaktif'
-  const [sortBy, setSortBy] = useState('terbaru') // 'terbaru' | 'nama'
+  const [statusFilter, setStatusFilter] = useState('semua')
+  const [sortBy, setSortBy] = useState('terbaru')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [togglingId, setTogglingId] = useState(null)
@@ -57,8 +58,6 @@ export default function DataCustomer() {
       if (kendaraanRes.error) throw kendaraanRes.error
       if (bookingRes.error) throw bookingRes.error
 
-      // Hitung jumlah kendaraan & total servis per customer (client-side aggregate,
-      // biar cuma 3 query total daripada N+1 query per customer)
       const kendaraanCount = new Map()
       for (const k of kendaraanRes.data ?? []) {
         kendaraanCount.set(k.customer_id, (kendaraanCount.get(k.customer_id) || 0) + 1)
@@ -205,7 +204,6 @@ export default function DataCustomer() {
         </div>
       )}
 
-      {/* Filter bar */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <select
           value={statusFilter}
@@ -238,7 +236,6 @@ export default function DataCustomer() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="rounded-2xl bg-white p-2 shadow-sm">
         {paginated.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-slate-400">Tidak ada customer yang cocok dengan filter ini.</p>
@@ -289,20 +286,20 @@ export default function DataCustomer() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => alert('Halaman detail customer belum dibikin.')}
+                        <Link
+                          to={`/admin/customer/${c.id}`}
                           className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                           title="Lihat detail"
                         >
                           <Eye size={16} />
-                        </button>
-                        <button
-                          onClick={() => alert('Halaman edit customer belum dibikin.')}
+                        </Link>
+                        <Link
+                          to={`/admin/customer/${c.id}/edit`}
                           className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                           title="Edit"
                         >
                           <Pencil size={16} />
-                        </button>
+                        </Link>
                       </div>
                     </td>
                   </tr>
@@ -313,7 +310,6 @@ export default function DataCustomer() {
         )}
       </div>
 
-      {/* Pagination */}
       {filtered.length > 0 && (
         <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
           <p>
@@ -351,7 +347,6 @@ export default function DataCustomer() {
         </div>
       )}
 
-      {/* Modal Tambah Customer */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">

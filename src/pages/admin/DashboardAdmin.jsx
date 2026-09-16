@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Users, CalendarClock, Wallet, UserCheck, ArrowUpRight, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 // ------------------------------------------------------------
@@ -166,9 +166,9 @@ export default function DashboardAdmin() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-8">
+    <div className="min-h-full px-2 py-2">
       {/* Topbar */}
-      <header className="mb-7 flex items-center justify-between">
+      <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard Admin</h1>
           <p className="mt-1 text-sm text-slate-400">
@@ -179,51 +179,65 @@ export default function DashboardAdmin() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm hover:text-slate-800"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-100 transition hover:text-indigo-600 hover:ring-indigo-100"
             title="Refresh data"
           >
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
           </button>
-          <div className="h-9 w-9 rounded-full bg-indigo-900" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-900 text-sm font-semibold text-white">
+            A
+          </div>
         </div>
       </header>
 
       {error && (
-        <div className="mb-5 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
-          Gagal memuat sebagian data: {error}
+        <div className="mb-5 flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
+          <AlertTriangle size={16} /> Gagal memuat sebagian data: {error}
         </div>
       )}
 
       {/* Stat cards */}
-      <section className="mb-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon="👤" iconBg="bg-indigo-100" label="Total Customer" value={totalCustomer.toLocaleString('id-ID')}
-          trend={customerBaruBulanIni > 0 ? `+${customerBaruBulanIni}` : null} />
-        <StatCard icon="📅" iconBg="bg-orange-100" label="Booking Hari Ini" value={bookingHariIni} />
-        <StatCard icon="💵" iconBg="bg-emerald-100" label="Pendapatan Bulan Ini" value={formatRupiahSingkat(pendapatanBulanIni)}
-          trend={pendapatanGrowth !== null ? `${pendapatanGrowth >= 0 ? '+' : ''}${pendapatanGrowth}%` : null} />
-        <StatCard icon="✅" iconBg="bg-violet-100" label="Mekanik Aktif" value={`${mekanikAktif.aktif} / ${mekanikAktif.total}`} />
+      <section className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          icon={<Users size={20} />}
+          accent="indigo"
+          label="Total Customer"
+          value={totalCustomer.toLocaleString('id-ID')}
+          trend={customerBaruBulanIni > 0 ? `+${customerBaruBulanIni}` : null}
+        />
+        <StatCard icon={<CalendarClock size={20} />} accent="amber" label="Booking Hari Ini" value={bookingHariIni} />
+        <StatCard
+          icon={<Wallet size={20} />}
+          accent="emerald"
+          label="Pendapatan Bulan Ini"
+          value={formatRupiahSingkat(pendapatanBulanIni)}
+          trend={pendapatanGrowth !== null ? `${pendapatanGrowth >= 0 ? '+' : ''}${pendapatanGrowth}%` : null}
+        />
+        <StatCard icon={<UserCheck size={20} />} accent="violet" label="Mekanik Aktif" value={`${mekanikAktif.aktif} / ${mekanikAktif.total}`} />
       </section>
 
       {/* Main grid */}
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Booking terbaru */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Booking Terbaru</h2>
-            <a href="/admin/booking" className="text-xs font-medium text-indigo-600 hover:underline">Lihat Semua →</a>
+            <a href="/admin/booking" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline">
+              Lihat Semua <ArrowUpRight size={12} />
+            </a>
           </div>
 
           {bookingTerbaru.length === 0 ? (
-            <p className="text-sm text-slate-400">Belum ada booking.</p>
+            <p className="py-6 text-center text-sm text-slate-400">Belum ada booking.</p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-2.5">
               {bookingTerbaru.map((b) => (
                 <li
                   key={b.id}
-                  className="flex flex-col gap-3 rounded-xl border border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-xl border border-slate-100 p-4 transition hover:bg-slate-50/70 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ${avatarColor(b.customer?.full_name)}`}>
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ${avatarColor(b.customer?.full_name)}`}>
                       {inisial(b.customer?.full_name)}
                     </span>
                     <div>
@@ -246,17 +260,19 @@ export default function DashboardAdmin() {
 
         {/* Kolom kanan: Stok menipis + Layanan terpopuler */}
         <div className="space-y-5">
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-900">Stok Sparepart Menipis</h2>
-              <a href="/admin/produk" className="text-xs font-medium text-indigo-600 hover:underline">Kelola →</a>
+              <a href="/admin/produk" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline">
+                Kelola <ArrowUpRight size={12} />
+              </a>
             </div>
             {stokMenipis.length === 0 ? (
-              <p className="text-sm text-slate-400">Stok aman.</p>
+              <p className="py-4 text-center text-sm text-slate-400">Stok aman.</p>
             ) : (
               <ul className="divide-y divide-slate-50">
                 {stokMenipis.map((p) => (
-                  <li key={p.nama} className="flex items-center justify-between py-2.5">
+                  <li key={p.nama} className="flex items-center justify-between py-3">
                     <div>
                       <p className="text-sm font-medium text-slate-900">{p.nama}</p>
                       <p className="text-xs text-slate-400">Sisa {p.stok} unit</p>
@@ -268,20 +284,20 @@ export default function DashboardAdmin() {
             )}
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-slate-900">Layanan Terpopuler</h2>
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+            <h2 className="mb-4 text-sm font-semibold text-slate-900">Layanan Terpopuler</h2>
             {layananTerpopuler.length === 0 ? (
-              <p className="text-sm text-slate-400">Belum ada data booking.</p>
+              <p className="py-4 text-center text-sm text-slate-400">Belum ada data booking.</p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 {layananTerpopuler.map((l) => (
                   <li key={l.nama}>
                     <div className="mb-1.5 flex justify-between text-sm text-slate-700">
                       <span>{l.nama}</span>
-                      <span className="text-xs text-slate-400">{l.jumlah}x</span>
+                      <span className="text-xs font-medium text-slate-400">{l.jumlah}x</span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                      <div className="h-full rounded-full bg-violet-500" style={{ width: `${l.persen}%` }} />
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" style={{ width: `${l.persen}%` }} />
                     </div>
                   </li>
                 ))}
@@ -294,15 +310,25 @@ export default function DashboardAdmin() {
   )
 }
 
-function StatCard({ icon, iconBg, label, value, trend }) {
+function StatCard({ icon, label, value, trend, accent = 'indigo' }) {
+  const accents = {
+    indigo: 'bg-indigo-50 text-indigo-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    amber: 'bg-amber-50 text-amber-600',
+    violet: 'bg-violet-50 text-violet-600',
+  }
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <div className={`flex h-9 w-9 items-center justify-center rounded-lg text-base ${iconBg}`}>{icon}</div>
-        {trend && <span className="text-xs font-semibold text-emerald-600">{trend}</span>}
+    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100 transition hover:shadow-md">
+      <div className="mb-5 flex items-center justify-between">
+        <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</span>
+        {trend && (
+          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${trend.startsWith('-') ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+            {trend}
+          </span>
+        )}
       </div>
-      <p className="mb-1 text-xs text-slate-400">{label}</p>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="mt-1 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
     </div>
   )
 }

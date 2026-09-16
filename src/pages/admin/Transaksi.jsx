@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Search, Wallet, Clock, RotateCcw, Receipt } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -33,9 +34,6 @@ const TABS = [
   { key: 'refund', label: 'Refund' },
 ]
 
-// ------------------------------------------------------------
-// Component
-// ------------------------------------------------------------
 export default function Transaksi() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -65,7 +63,6 @@ export default function Transaksi() {
       if (transaksiRes.error) throw transaksiRes.error
       if (itemRes.error) throw itemRes.error
 
-      // Hitung total item per transaksi produk (buat ditampilin di kolom "Item")
       const itemCount = new Map()
       for (const it of itemRes.data ?? []) {
         itemCount.set(it.transaksi_id, (itemCount.get(it.transaksi_id) || 0) + (it.qty || 0))
@@ -149,7 +146,6 @@ export default function Transaksi() {
         </div>
       )}
 
-      {/* Stat cards */}
       <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={<Receipt size={16} />} iconBg="bg-indigo-100 text-indigo-600" label="Total Transaksi" value={stats.total} />
         <StatCard icon={<Wallet size={16} />} iconBg="bg-emerald-100 text-emerald-600" label="Pendapatan (Berhasil)" value={formatRupiah(stats.pendapatan)} />
@@ -157,7 +153,6 @@ export default function Transaksi() {
         <StatCard icon={<RotateCcw size={16} />} iconBg="bg-slate-100 text-slate-500" label="Refund" value={stats.refund} />
       </div>
 
-      {/* Tabs status */}
       <div className="mb-4 flex flex-wrap gap-2">
         {TABS.map((tab) => (
           <button
@@ -175,7 +170,6 @@ export default function Transaksi() {
         ))}
       </div>
 
-      {/* Filter bar */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <select
           value={jenisFilter}
@@ -199,7 +193,6 @@ export default function Transaksi() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="rounded-2xl bg-white p-2 shadow-sm">
         {paginated.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-slate-400">Tidak ada transaksi yang cocok dengan filter ini.</p>
@@ -262,12 +255,12 @@ export default function Transaksi() {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => alert('Halaman detail transaksi belum dibikin.')}
+                        <Link
+                          to={`/admin/transaksi/${t.id}`}
                           className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                         >
                           Detail
-                        </button>
+                        </Link>
                       )}
                     </td>
                   </tr>
@@ -278,7 +271,6 @@ export default function Transaksi() {
         )}
       </div>
 
-      {/* Pagination */}
       {filtered.length > 0 && (
         <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
           <p>
