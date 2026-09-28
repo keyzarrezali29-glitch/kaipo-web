@@ -25,6 +25,13 @@ function formatTanggal(tanggalStr) {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function bukaWhatsApp(phone) {
+  let nomor = String(phone || '').replace(/\D/g, '')
+  if (!nomor) return
+  if (nomor.startsWith('0')) nomor = '62' + nomor.slice(1)
+  window.open(`https://wa.me/${nomor}`, '_blank', 'noopener,noreferrer')
+}
+
 const STATUS_LABEL = { dijadwalkan: 'Menunggu', diproses: 'Dikerjakan', selesai: 'Selesai', dibatalkan: 'Dibatalkan' }
 const STATUS_CLASS = {
   dijadwalkan: 'bg-amber-100 text-amber-700',
@@ -195,47 +202,53 @@ export default function DaftarPekerjaan() {
           {paginated.map((job) => (
             <li key={job.id} className="rounded-2xl bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                {/* Kiri: info layanan + customer */}
+                {/* Kiri: layanan + customer */}
                 <div className="flex flex-1 items-start gap-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                     <IconFor name={job.layanan?.icon} size={19} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                    {/* Judul servis + status */}
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
                       <p className="text-sm font-semibold text-slate-900">{job.layanan?.nama ?? '-'}</p>
                       <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_CLASS[job.status]}`}>
                         {STATUS_LABEL[job.status]}
                       </span>
+                      <span className="font-mono text-[11px] text-slate-400">#{job.kode_booking}</span>
                     </div>
-                    <p className="mb-2 flex items-center gap-1.5 text-xs text-slate-400">
+
+                    {/* Nama customer */}
+                    <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ${avatarColor(job.customer?.full_name)}`}>
+                        {inisial(job.customer?.full_name)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] text-slate-400">Customer</p>
+                        <p className="truncate text-sm font-semibold text-slate-800">
+                          {job.customer?.full_name ?? '-'}
+                        </p>
+                      </div>
+                      {job.customer?.phone && (
+                        <button
+                          type="button"
+                          onClick={() => bukaWhatsApp(job.customer.phone)}
+                          title="Hubungi via WhatsApp"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                        >
+                          <Phone size={14} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Kendaraan + jadwal */}
+                    <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate-400">
                       <Car size={12} />
-                      {[job.kendaraan?.merek, job.kendaraan?.model].filter(Boolean).join(' ')} · {job.kendaraan?.plat_nomor}
+                      {[job.kendaraan?.merek, job.kendaraan?.model].filter(Boolean).join(' ') || '-'}
+                      {job.kendaraan?.plat_nomor && <span>· {job.kendaraan.plat_nomor}</span>}
                       <span className="text-slate-300">•</span>
                       <Calendar size={12} />
                       {formatTanggal(job.tanggal)}, {job.waktu?.slice(0, 5)} WIB
                     </p>
-
-                    {/* Customer info dengan avatar + kontak cepat */}
-                    <div className="flex items-center gap-2">
-                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white ${avatarColor(job.customer?.full_name)}`}>
-                        {inisial(job.customer?.full_name)}
-                      </span>
-                      <span className="text-xs font-medium text-slate-600">{job.customer?.full_name ?? '-'}</span>
-                      <span className="text-xs text-slate-300">·</span>
-                      <span className="font-mono text-xs text-slate-400">#{job.kode_booking}</span>
-                      {job.customer?.phone && (
-                        <a
-                          href={`https://wa.me/${job.customer.phone.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          title="Hubungi via WhatsApp"
-                          className="flex h-6 w-6 items-center justify-center rounded-full text-emerald-600 hover:bg-emerald-50"
-                        >
-                          <Phone size={13} />
-                        </a>
-                      )}
-                    </div>
 
                     {job.catatan && (
                       <p className="mt-2 line-clamp-1 text-xs text-slate-400">Keluhan: {job.catatan}</p>
