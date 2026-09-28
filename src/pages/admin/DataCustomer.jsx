@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, Eye, Pencil, X, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import Avatar from '../../components/Avatar'
 
 // ------------------------------------------------------------
 // Helpers
@@ -10,17 +11,6 @@ function formatTanggalGabung(dateStr) {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
-function inisial(nama) {
-  if (!nama) return '?'
-  return nama.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-}
-
-const AVATAR_COLORS = ['bg-indigo-900', 'bg-violet-600', 'bg-sky-700', 'bg-emerald-700', 'bg-rose-700']
-function avatarColor(seed) {
-  const i = (seed || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  return AVATAR_COLORS[i % AVATAR_COLORS.length]
 }
 
 const PER_PAGE = 5
@@ -49,7 +39,7 @@ export default function DataCustomer() {
     try {
       setError(null)
       const [profilesRes, kendaraanRes, bookingRes] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, email, phone, is_active, created_at').eq('role', 'customer'),
+        supabase.from('profiles').select('id, full_name, email, phone, avatar_url, is_active, created_at').eq('role', 'customer'),
         supabase.from('kendaraan').select('customer_id'),
         supabase.from('booking').select('customer_id'),
       ])
@@ -257,9 +247,7 @@ export default function DataCustomer() {
                   <tr key={c.id} className="border-t border-slate-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ${avatarColor(c.full_name)}`}>
-                          {inisial(c.full_name)}
-                        </span>
+                        <Avatar nama={c.full_name} url={c.avatar_url} className="h-9 w-9 text-xs" />
                         <div>
                           <p className="font-medium text-slate-900">{c.full_name}</p>
                           <p className="text-xs text-slate-400">Bergabung {formatTanggalGabung(c.created_at)}</p>

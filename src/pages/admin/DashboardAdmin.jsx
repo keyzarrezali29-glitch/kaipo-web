@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw, Users, CalendarClock, Wallet, UserCheck, ArrowUpRight, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import Avatar from '../../components/Avatar'
 
 // ------------------------------------------------------------
 // Helpers
@@ -19,11 +20,6 @@ function formatTanggal(tanggalStr) {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
 
-function inisial(nama) {
-  if (!nama) return '?'
-  return nama.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-}
-
 const STATUS_LABEL = {
   menunggu_konfirmasi: 'Menunggu',
   dijadwalkan: 'Dijadwalkan',
@@ -38,12 +34,6 @@ const STATUS_CLASS = {
   diproses: 'bg-blue-100 text-blue-700',
   selesai: 'bg-emerald-100 text-emerald-700',
   dibatalkan: 'bg-rose-100 text-rose-700',
-}
-
-const AVATAR_COLORS = ['bg-indigo-900', 'bg-violet-600', 'bg-sky-700', 'bg-emerald-700', 'bg-rose-700']
-function avatarColor(seed) {
-  const i = (seed || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  return AVATAR_COLORS[i % AVATAR_COLORS.length]
 }
 
 function getMonthRangeISO(offset = 0) {
@@ -104,7 +94,7 @@ export default function DashboardAdmin() {
           .from('booking')
           .select(`
             id, tanggal, waktu, status,
-            customer:customer_id ( full_name ),
+            customer:customer_id ( full_name, avatar_url ),
             kendaraan:kendaraan_id ( merek, model ),
             layanan:layanan_id ( nama )
           `)
@@ -167,7 +157,6 @@ export default function DashboardAdmin() {
 
   return (
     <div className="min-h-full px-2 py-2">
-      {/* Topbar */}
       <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard Admin</h1>
@@ -196,7 +185,6 @@ export default function DashboardAdmin() {
         </div>
       )}
 
-      {/* Stat cards */}
       <section className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<Users size={20} />}
@@ -216,9 +204,7 @@ export default function DashboardAdmin() {
         <StatCard icon={<UserCheck size={20} />} accent="violet" label="Mekanik Aktif" value={`${mekanikAktif.aktif} / ${mekanikAktif.total}`} />
       </section>
 
-      {/* Main grid */}
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {/* Booking terbaru */}
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Booking Terbaru</h2>
@@ -237,9 +223,7 @@ export default function DashboardAdmin() {
                   className="flex flex-col gap-3 rounded-xl border border-slate-100 p-4 transition hover:bg-slate-50/70 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ${avatarColor(b.customer?.full_name)}`}>
-                      {inisial(b.customer?.full_name)}
-                    </span>
+                    <Avatar nama={b.customer?.full_name} url={b.customer?.avatar_url} className="h-10 w-10 text-xs" />
                     <div>
                       <p className="text-sm font-semibold text-slate-900">
                         {b.layanan?.nama ?? '-'} — {[b.kendaraan?.merek, b.kendaraan?.model].filter(Boolean).join(' ') || '-'}
@@ -258,7 +242,6 @@ export default function DashboardAdmin() {
           )}
         </div>
 
-        {/* Kolom kanan: Stok menipis + Layanan terpopuler */}
         <div className="space-y-5">
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
             <div className="mb-4 flex items-center justify-between">

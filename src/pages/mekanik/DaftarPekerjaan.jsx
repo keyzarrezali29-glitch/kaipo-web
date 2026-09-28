@@ -2,21 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, Wrench, Settings2, Zap, Disc3, Droplet, Car, Wind, Sparkles, Phone, Calendar } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import Avatar from '../../components/Avatar'
 
 const ICON_MAP = { wrench: Wrench, engine: Settings2, bolt: Zap, wheel: Disc3, oil: Droplet, car: Car, aircon: Wind, sparkles: Sparkles }
 function IconFor({ name, size = 16 }) {
   const Comp = ICON_MAP[name] || Wrench
   return <Comp size={size} />
-}
-
-function inisial(nama) {
-  if (!nama) return '?'
-  return nama.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-}
-const AVATAR_COLORS = ['bg-indigo-900', 'bg-violet-600', 'bg-sky-700', 'bg-emerald-700', 'bg-rose-700']
-function avatarColor(seed) {
-  const i = (seed || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  return AVATAR_COLORS[i % AVATAR_COLORS.length]
 }
 
 function formatTanggal(tanggalStr) {
@@ -71,7 +62,7 @@ export default function DaftarPekerjaan() {
         .from('booking')
         .select(`
           id, kode_booking, tanggal, waktu, status, catatan,
-          customer:customer_id ( full_name, phone ),
+          customer:customer_id ( full_name, phone, avatar_url ),
           kendaraan:kendaraan_id ( merek, model, plat_nomor ),
           layanan:layanan_id ( nama, icon )
         `)
@@ -219,9 +210,7 @@ export default function DaftarPekerjaan() {
 
                     {/* Nama customer */}
                     <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2">
-                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ${avatarColor(job.customer?.full_name)}`}>
-                        {inisial(job.customer?.full_name)}
-                      </span>
+                      <Avatar nama={job.customer?.full_name} url={job.customer?.avatar_url} className="h-9 w-9 text-xs" />
                       <div className="min-w-0 flex-1">
                         <p className="text-[11px] text-slate-400">Customer</p>
                         <p className="truncate text-sm font-semibold text-slate-800">

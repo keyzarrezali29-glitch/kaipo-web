@@ -2,22 +2,12 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Mail, Phone, Calendar, Car, Wrench, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import Avatar from '../../components/Avatar'
 
 function formatTanggal(dateStr) {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-
-function inisial(nama) {
-  if (!nama) return '?'
-  return nama.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-}
-
-const AVATAR_COLORS = ['bg-indigo-900', 'bg-violet-600', 'bg-sky-700', 'bg-emerald-700', 'bg-rose-700']
-function avatarColor(seed) {
-  const i = (seed || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  return AVATAR_COLORS[i % AVATAR_COLORS.length]
 }
 
 const STATUS_LABEL = {
@@ -102,9 +92,7 @@ export default function DetailCustomer() {
 
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className={`flex h-14 w-14 items-center justify-center rounded-full text-lg font-semibold text-white ${avatarColor(customer.full_name)}`}>
-            {inisial(customer.full_name)}
-          </span>
+          <Avatar nama={customer.full_name} url={customer.avatar_url} className="h-16 w-16 text-xl" />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-slate-900">{customer.full_name}</h1>
