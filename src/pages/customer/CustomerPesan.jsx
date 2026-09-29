@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, Wrench, Tag, CheckCircle2, XCircle, Clock } from 'lucide-react'
+import { Bell, Tag, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 const STATUS_LABEL = {
@@ -12,9 +12,9 @@ const STATUS_LABEL = {
 }
 
 function iconUntukStatus(status) {
-  if (status === 'selesai') return <CheckCircle2 size={16} />
-  if (status === 'dibatalkan') return <XCircle size={16} />
-  return <Clock size={16} />
+  if (status === 'selesai') return <CheckCircle2 size={17} />
+  if (status === 'dibatalkan') return <XCircle size={17} />
+  return <Clock size={17} />
 }
 
 function formatWaktu(ts) {
@@ -44,7 +44,6 @@ export default function CustomerPesan() {
         const todayStr = new Date().toISOString().slice(0, 10)
 
         const [logRes, promoRes] = await Promise.all([
-          // Ambil riwayat status dari booking milik customer ini aja
           supabase
             .from('booking_status_log')
             .select(`
@@ -66,8 +65,6 @@ export default function CustomerPesan() {
         if (promoRes.error) throw promoRes.error
 
         // Filter log status: cuma yang booking-nya emang punya customer ini
-        // (query di atas ambil semua log dulu, kita saring di sini karena
-        // filter lewat relasi nested agak ribet di query builder)
         const logNotif = (logRes.data ?? [])
           .filter((log) => log.booking?.customer_id === user.id)
           .map((log) => ({
@@ -108,39 +105,46 @@ export default function CustomerPesan() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Pesan</h1>
-        <p className="mt-1 text-sm text-slate-400">Update terbaru seputar booking dan promo Anda</p>
+    <div className="min-h-full">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Pesan</h1>
+          <p className="mt-1 text-sm text-slate-400">Update terbaru seputar booking dan promo Anda</p>
+        </div>
+        {notifikasi.length > 0 && (
+          <span className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#12123a]">
+            {notifikasi.length} pembaruan
+          </span>
+        )}
       </header>
 
-      {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>
-      )}
+      {error && <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>}
 
       {notifikasi.length === 0 ? (
-        <div className="rounded-2xl bg-white p-10 text-center shadow-sm">
-          <Bell size={32} className="mx-auto mb-3 text-slate-300" />
+        <div className="rounded-3xl bg-white p-12 text-center">
+          <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+            <Bell size={24} />
+          </span>
           <p className="text-sm text-slate-400">Belum ada notifikasi.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {notifikasi.map((n) => {
             const isi = (
-              <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm transition hover:shadow-md">
+              <div className="flex items-start gap-4 rounded-3xl bg-white p-5 transition hover:shadow-md">
                 <span
-                  className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                    n.tipe === 'promo' ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600'
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+                    n.tipe === 'promo' ? 'bg-[#12123a] text-white' : 'bg-slate-100 text-[#12123a]'
                   }`}
                 >
-                  {n.tipe === 'promo' ? <Tag size={16} /> : iconUntukStatus(n.status)}
+                  {n.tipe === 'promo' ? <Tag size={17} /> : iconUntukStatus(n.status)}
                 </span>
-                <div className="flex-1">
-                  <div className="mb-0.5 flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-0.5 flex items-start justify-between gap-3">
                     <p className="text-sm font-semibold text-slate-900">{n.judul}</p>
                     <span className="shrink-0 text-[11px] text-slate-400">{formatWaktu(n.waktu)}</span>
                   </div>
-                  <p className="text-xs text-slate-400">{n.deskripsi}</p>
+                  <p className="text-xs leading-relaxed text-slate-400">{n.deskripsi}</p>
                 </div>
               </div>
             )

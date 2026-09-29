@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Wrench, Car, MapPin, StickyNote, User, CheckCircle2, Circle, XCircle } from 'lucide-react'
+import { ArrowLeft, Wrench, Car, MapPin, StickyNote, CheckCircle2, Circle, XCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import TombolBayar from '../../components/TombolBayar'
+import Avatar from '../../components/Avatar'
 
 // ------------------------------------------------------------
 // Helpers
@@ -30,15 +31,12 @@ const STATUS_LABEL = {
   dibatalkan: 'Dibatalkan',
 }
 const STATUS_CLASS = {
-  menunggu_konfirmasi: 'bg-amber-100 text-amber-700',
-  dijadwalkan: 'bg-amber-100 text-amber-700',
-  diproses: 'bg-blue-100 text-blue-700',
-  selesai: 'bg-emerald-100 text-emerald-700',
-  dibatalkan: 'bg-rose-100 text-rose-700',
+  menunggu_konfirmasi: 'bg-amber-50 text-amber-700 ring-amber-100',
+  dijadwalkan: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+  diproses: 'bg-blue-50 text-blue-700 ring-blue-100',
+  selesai: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  dibatalkan: 'bg-rose-50 text-rose-700 ring-rose-100',
 }
-
-// Urutan progres normal (dipakai buat nentuin timeline mana yang udah lewat)
-const URUTAN_STATUS = ['menunggu_konfirmasi', 'dijadwalkan', 'diproses', 'selesai']
 
 const TRANSAKSI_STATUS_LABEL = {
   menunggu: 'Menunggu Pembayaran',
@@ -47,10 +45,10 @@ const TRANSAKSI_STATUS_LABEL = {
   refund: 'Refund',
 }
 const TRANSAKSI_STATUS_CLASS = {
-  menunggu: 'bg-amber-100 text-amber-700',
-  berhasil: 'bg-emerald-100 text-emerald-700',
-  gagal: 'bg-rose-100 text-rose-700',
-  refund: 'bg-slate-100 text-slate-600',
+  menunggu: 'bg-amber-50 text-amber-700 ring-amber-100',
+  berhasil: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  gagal: 'bg-rose-50 text-rose-700 ring-rose-100',
+  refund: 'bg-slate-50 text-slate-600 ring-slate-100',
 }
 
 // ------------------------------------------------------------
@@ -75,7 +73,7 @@ export default function CustomerDetailBooking() {
             id, kode_booking, tanggal, waktu, status, lokasi, catatan, biaya_estimasi, biaya_final,
             kendaraan:kendaraan_id ( merek, model, plat_nomor ),
             layanan:layanan_id ( nama, harga, deskripsi ),
-            mekanik:mekanik_id ( full_name )
+            mekanik:mekanik_id ( full_name, avatar_url )
           `)
           .eq('id', id)
           .single(),
@@ -111,11 +109,11 @@ export default function CustomerDetailBooking() {
 
   if (error || !booking) {
     return (
-      <div className="min-h-full bg-slate-100 px-8 py-6">
+      <div className="min-h-full">
         <Link to="/customer/booking" className="mb-4 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
           <ArrowLeft size={16} /> Kembali
         </Link>
-        <div className="rounded-2xl bg-white p-10 text-center text-sm text-rose-500 shadow-sm">
+        <div className="rounded-3xl bg-white p-12 text-center text-sm text-rose-500">
           {error ?? 'Booking tidak ditemukan.'}
         </div>
       </div>
@@ -123,32 +121,31 @@ export default function CustomerDetailBooking() {
   }
 
   const sudahLunas = transaksiList.some((t) => t.status === 'berhasil')
-  const transaksiAktif = transaksiList[0] // yang paling baru
   const bisaBayar = booking.status !== 'dibatalkan' && !sudahLunas
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
-      <Link to="/customer/booking" className="mb-4 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
+    <div className="min-h-full">
+      <Link to="/customer/booking" className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
         <ArrowLeft size={16} /> Kembali ke Booking
       </Link>
 
       {/* Header */}
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-slate-400">Kode Booking</p>
-          <h1 className="text-2xl font-bold text-slate-900">{booking.kode_booking}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{booking.kode_booking}</h1>
         </div>
-        <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${STATUS_CLASS[booking.status]}`}>
+        <span className={`rounded-md px-3.5 py-1.5 text-xs font-semibold ring-1 ring-inset ${STATUS_CLASS[booking.status]}`}>
           {STATUS_LABEL[booking.status]}
         </span>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
           {/* Info Booking */}
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="mb-4 text-sm font-semibold text-slate-900">Detail Servis</h2>
-            <div className="space-y-4">
+          <div className="rounded-3xl bg-white p-6">
+            <h2 className="mb-5 text-[15px] font-semibold text-slate-900">Detail Servis</h2>
+            <div className="space-y-5">
               <InfoRow icon={<Wrench size={16} />} label="Layanan" value={booking.layanan?.nama ?? '-'} sub={booking.layanan?.deskripsi} />
               <InfoRow
                 icon={<Car size={16} />}
@@ -163,7 +160,12 @@ export default function CustomerDetailBooking() {
                 sub={booking.lokasi ?? 'Kai-Po Elite Garage'}
               />
               {booking.mekanik?.full_name && (
-                <InfoRow icon={<User size={16} />} label="Mekanik" value={booking.mekanik.full_name} />
+                <InfoRow
+                  bare
+                  icon={<Avatar nama={booking.mekanik.full_name} url={booking.mekanik.avatar_url} className="h-10 w-10 text-sm" />}
+                  label="Mekanik"
+                  value={booking.mekanik.full_name}
+                />
               )}
               {booking.catatan && (
                 <InfoRow icon={<StickyNote size={16} />} label="Catatan" value={booking.catatan} />
@@ -172,30 +174,30 @@ export default function CustomerDetailBooking() {
           </div>
 
           {/* Timeline Status */}
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="mb-4 text-sm font-semibold text-slate-900">Riwayat Status</h2>
+          <div className="rounded-3xl bg-white p-6">
+            <h2 className="mb-5 text-[15px] font-semibold text-slate-900">Riwayat Status</h2>
             {logStatus.length === 0 ? (
               <p className="text-sm text-slate-400">Belum ada perubahan status.</p>
             ) : (
-              <ol className="space-y-0">
+              <ol>
                 {logStatus.map((log, i) => {
                   const isLast = i === logStatus.length - 1
                   const isDibatalkan = log.status === 'dibatalkan'
                   return (
-                    <li key={log.id} className="relative flex gap-3 pb-6 last:pb-0">
-                      {!isLast && <span className="absolute left-[9px] top-5 h-full w-px bg-slate-100" />}
-                      <span className="mt-0.5 shrink-0">
+                    <li key={log.id} className="relative flex gap-4 pb-6 last:pb-0">
+                      {!isLast && <span className="absolute left-[10px] top-6 h-full w-px bg-slate-200" />}
+                      <span className="mt-0.5 shrink-0 bg-white">
                         {isDibatalkan ? (
-                          <XCircle size={19} className="text-rose-500" />
+                          <XCircle size={21} className="text-rose-500" />
                         ) : isLast ? (
-                          <CheckCircle2 size={19} className="text-indigo-600" />
+                          <CheckCircle2 size={21} className="text-[#12123a]" />
                         ) : (
-                          <Circle size={19} className="text-slate-300" />
+                          <Circle size={21} className="text-slate-300" />
                         )}
                       </span>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{STATUS_LABEL[log.status] ?? log.status}</p>
-                        {log.catatan && <p className="text-xs text-slate-400">{log.catatan}</p>}
+                        {log.catatan && <p className="text-xs text-slate-500">{log.catatan}</p>}
                         <p className="text-xs text-slate-400">{formatWaktuSingkat(log.created_at)}</p>
                       </div>
                     </li>
@@ -208,27 +210,28 @@ export default function CustomerDetailBooking() {
 
         {/* Sidebar: Pembayaran */}
         <div className="lg:sticky lg:top-6 lg:h-fit">
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <h3 className="mb-4 text-sm font-semibold text-slate-900">Pembayaran</h3>
+          <div className="rounded-3xl bg-white p-6">
+            <h3 className="mb-4 text-[15px] font-semibold text-slate-900">Pembayaran</h3>
 
-            <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
-              <span className="text-sm text-slate-400">
-                {booking.biaya_final ? 'Total Biaya' : 'Estimasi Biaya'}
-              </span>
-              <span className="text-lg font-bold text-slate-900">
+            <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-[#12123a] via-[#181850] to-[#2b2b7a] p-5 text-white">
+              <div className="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full border-[14px] border-white/5" />
+              <p className="relative text-xs text-white/60">
+                {booking.biaya_final ? 'Total biaya' : 'Estimasi biaya'}
+              </p>
+              <p className="relative mt-1 text-2xl font-bold tracking-tight">
                 {formatRupiah(booking.biaya_final ?? booking.biaya_estimasi ?? booking.layanan?.harga)}
-              </span>
+              </p>
             </div>
 
             {sudahLunas ? (
-              <div className="flex items-center justify-center gap-2 rounded-lg bg-emerald-50 py-3 text-sm font-semibold text-emerald-700">
+              <div className="flex items-center justify-center gap-2 rounded-full bg-emerald-50 py-3.5 text-sm font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
                 <CheckCircle2 size={16} /> Sudah Dibayar
               </div>
             ) : bisaBayar ? (
               <TombolBayar
                 bookingId={booking.id}
                 onSukses={load}
-                className="block w-full rounded-xl bg-amber-500 py-3 text-center text-sm font-semibold text-[#12123a] hover:bg-amber-400 disabled:opacity-60"
+                className="block w-full rounded-full bg-[#12123a] py-3.5 text-center text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-60"
               >
                 Bayar Sekarang
               </TombolBayar>
@@ -238,12 +241,12 @@ export default function CustomerDetailBooking() {
 
             {/* Riwayat percobaan transaksi, kalau ada lebih dari 1 (misal sempat gagal/expired lalu coba lagi) */}
             {transaksiList.length > 0 && (
-              <div className="mt-5 space-y-2 border-t border-slate-100 pt-4">
-                <p className="mb-1 text-xs font-semibold text-slate-500">Riwayat Transaksi</p>
+              <div className="mt-5 space-y-2.5 border-t border-slate-100 pt-4">
+                <p className="text-xs font-semibold text-slate-500">Riwayat Transaksi</p>
                 {transaksiList.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400">{t.kode_transaksi}</span>
-                    <span className={`rounded-full px-2.5 py-1 font-semibold ${TRANSAKSI_STATUS_CLASS[t.status]}`}>
+                  <div key={t.id} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="truncate font-mono text-slate-400">{t.kode_transaksi}</span>
+                    <span className={`shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${TRANSAKSI_STATUS_CLASS[t.status]}`}>
                       {TRANSAKSI_STATUS_LABEL[t.status] ?? t.status}
                     </span>
                   </div>
@@ -257,12 +260,16 @@ export default function CustomerDetailBooking() {
   )
 }
 
-function InfoRow({ icon, label, value, sub }) {
+function InfoRow({ icon, label, value, sub, bare = false }) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-        {icon}
-      </span>
+    <div className="flex items-start gap-4">
+      {bare ? (
+        icon
+      ) : (
+        <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[#12123a]">
+          {icon}
+        </span>
+      )}
       <div>
         <p className="text-xs text-slate-400">{label}</p>
         <p className="text-sm font-semibold text-slate-900">{value}</p>

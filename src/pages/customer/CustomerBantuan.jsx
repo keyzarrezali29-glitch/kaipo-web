@@ -21,7 +21,7 @@ const FAQ_LIST = [
   },
   {
     q: 'Bagaimana cara memakai kode promo?',
-    a: 'Salin kode promo dari menu "Promo", lalu sampaikan kode tersebut kepada admin/mekanik saat booking dikonfirmasi agar diskon diterapkan pada biaya servis Anda.',
+    a: 'Salin kode promo dari menu "Promo", lalu masukkan di langkah "Kode Promo" saat membuat booking. Diskon akan diverifikasi dan diterapkan oleh admin saat biaya servis Anda dikonfirmasi.',
   },
   {
     q: 'Apakah saya bisa menambahkan lebih dari satu kendaraan?',
@@ -29,9 +29,11 @@ const FAQ_LIST = [
   },
 ]
 
+// Nomor lokal 08xxx diubah ke format internasional 628xxx biar link WhatsApp valid
 function formatTelepon(telepon) {
-  if (!telepon) return ''
-  return telepon.replace(/\D/g, '')
+  let nomor = String(telepon || '').replace(/\D/g, '')
+  if (nomor.startsWith('0')) nomor = '62' + nomor.slice(1)
+  return nomor
 }
 
 export default function CustomerBantuan() {
@@ -54,25 +56,36 @@ export default function CustomerBantuan() {
     load()
   }, [])
 
+  function bukaWhatsApp() {
+    const nomor = formatTelepon(bengkel?.telepon)
+    if (!nomor) return
+    window.open(`https://wa.me/${nomor}`, '_blank', 'noopener,noreferrer')
+  }
+
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
+    <div className="min-h-full">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Bantuan</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Bantuan</h1>
         <p className="mt-1 text-sm text-slate-400">Pertanyaan umum dan cara menghubungi kami</p>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* FAQ */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm lg:col-span-2">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <HelpCircle size={16} className="text-indigo-600" /> Pertanyaan Umum
+        <div className="rounded-3xl bg-white p-6 lg:col-span-2">
+          <h2 className="mb-5 flex items-center gap-2 text-[15px] font-semibold text-slate-900">
+            <HelpCircle size={17} className="text-[#12123a]" /> Pertanyaan Umum
           </h2>
 
-          <div className="divide-y divide-slate-100">
+          <div className="space-y-2.5">
             {FAQ_LIST.map((item, i) => {
               const isOpen = openIndex === i
               return (
-                <div key={i} className="py-3">
+                <div
+                  key={i}
+                  className={`rounded-2xl border px-5 py-4 transition ${
+                    isOpen ? 'border-[#12123a] bg-slate-50' : 'border-slate-200'
+                  }`}
+                >
                   <button
                     onClick={() => setOpenIndex(isOpen ? -1 : i)}
                     className="flex w-full items-center justify-between gap-3 text-left"
@@ -80,10 +93,10 @@ export default function CustomerBantuan() {
                     <span className="text-sm font-semibold text-slate-800">{item.q}</span>
                     <ChevronDown
                       size={16}
-                      className={`shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      className={`shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-[#12123a]' : ''}`}
                     />
                   </button>
-                  {isOpen && <p className="mt-2 text-sm leading-relaxed text-slate-500">{item.a}</p>}
+                  {isOpen && <p className="mt-3 text-sm leading-relaxed text-slate-500">{item.a}</p>}
                 </div>
               )
             })}
@@ -91,57 +104,56 @@ export default function CustomerBantuan() {
         </div>
 
         {/* Kontak */}
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-[#12123a] p-5 text-white shadow-sm">
-            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-              <MessageCircle size={16} className="text-amber-400" /> Hubungi Kami
-            </h2>
+        <div className="relative h-fit overflow-hidden rounded-3xl bg-gradient-to-br from-[#12123a] via-[#181850] to-[#2b2b7a] p-6 text-white">
+          <div className="pointer-events-none absolute -bottom-16 -right-16 h-56 w-56 rounded-full border-[22px] border-white/5" />
+          <div className="pointer-events-none absolute -bottom-6 -right-6 h-32 w-32 rounded-full border-[14px] border-white/5" />
 
-            {loading ? (
-              <p className="text-xs text-white/50">Memuat info kontak...</p>
-            ) : bengkel ? (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm font-bold text-white">{bengkel.nama_bengkel}</p>
-                  {bengkel.deskripsi && <p className="mt-1 text-xs text-white/50">{bengkel.deskripsi}</p>}
-                </div>
+          <h2 className="relative mb-5 flex items-center gap-2 text-[15px] font-semibold">
+            <MessageCircle size={17} /> Hubungi Kami
+          </h2>
 
-                {bengkel.alamat && (
-                  <div className="flex items-start gap-2 text-xs text-white/70">
-                    <MapPin size={14} className="mt-0.5 shrink-0 text-white/40" />
-                    <span>{bengkel.alamat}</span>
-                  </div>
-                )}
-
-                {bengkel.jam_operasional && (
-                  <div className="flex items-start gap-2 text-xs text-white/70">
-                    <Clock size={14} className="mt-0.5 shrink-0 text-white/40" />
-                    <span>{bengkel.jam_operasional}</span>
-                  </div>
-                )}
-
-                {bengkel.telepon && (
-                  <>
-                    <div className="flex items-start gap-2 text-xs text-white/70">
-                      <Phone size={14} className="mt-0.5 shrink-0 text-white/40" />
-                      <span>{bengkel.telepon}</span>
-                    </div>
-
-                    <a
-                      href={`https://wa.me/${formatTelepon(bengkel.telepon)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block rounded-xl bg-amber-500 py-2.5 text-center text-xs font-semibold text-[#12123a] hover:bg-amber-400"
-                    >
-                      Chat via WhatsApp
-                    </a>
-                  </>
-                )}
+          {loading ? (
+            <p className="relative text-xs text-white/50">Memuat info kontak...</p>
+          ) : bengkel ? (
+            <div className="relative space-y-4">
+              <div>
+                <p className="text-lg font-bold">{bengkel.nama_bengkel}</p>
+                {bengkel.deskripsi && <p className="mt-1 text-xs leading-relaxed text-white/60">{bengkel.deskripsi}</p>}
               </div>
-            ) : (
-              <p className="text-xs text-white/50">Info kontak belum tersedia.</p>
-            )}
-          </div>
+
+              {bengkel.alamat && (
+                <div className="flex items-start gap-3 text-xs text-white/80">
+                  <MapPin size={15} className="mt-0.5 shrink-0 text-white/50" />
+                  <span>{bengkel.alamat}</span>
+                </div>
+              )}
+
+              {bengkel.jam_operasional && (
+                <div className="flex items-start gap-3 text-xs text-white/80">
+                  <Clock size={15} className="mt-0.5 shrink-0 text-white/50" />
+                  <span>{bengkel.jam_operasional}</span>
+                </div>
+              )}
+
+              {bengkel.telepon && (
+                <>
+                  <div className="flex items-start gap-3 text-xs text-white/80">
+                    <Phone size={15} className="mt-0.5 shrink-0 text-white/50" />
+                    <span>{bengkel.telepon}</span>
+                  </div>
+
+                  <button
+                    onClick={bukaWhatsApp}
+                    className="w-full rounded-full bg-white py-3.5 text-center text-sm font-semibold text-[#12123a] transition hover:bg-slate-100"
+                  >
+                    Chat via WhatsApp
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <p className="relative text-xs text-white/50">Info kontak belum tersedia.</p>
+          )}
         </div>
       </div>
     </div>

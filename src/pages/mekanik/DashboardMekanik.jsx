@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  RefreshCw, Wrench, Clock, CheckCircle2, Settings2, Zap, Disc3, Droplet, Car, Wind, Sparkles,
-  Package, Timer, ArrowUpRight, AlertTriangle,
+  RefreshCw, AlertTriangle, Wrench, Settings2, Zap, Disc3, Droplet, Car, Wind, Sparkles,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import Avatar from '../../components/Avatar'
+import { StatCard, PillChart, Gauge, toISO, getWeekDays } from '../../components/DashboardParts'
 
 // ------------------------------------------------------------
 // Helpers
@@ -21,18 +22,6 @@ function formatTanggal(tanggalStr) {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
 
-function getTodayISO() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-}
-
-function getMonthRangeISO() {
-  const now = new Date()
-  const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
-  return { start, end }
-}
-
 function formatDurasi(menitTotal) {
   if (!menitTotal || menitTotal <= 0) return '-'
   const jam = Math.floor(menitTotal / 60)
@@ -43,9 +32,22 @@ function formatDurasi(menitTotal) {
 
 const STATUS_LABEL = { dijadwalkan: 'Menunggu', diproses: 'Dikerjakan', selesai: 'Selesai' }
 const STATUS_CLASS = {
-  dijadwalkan: 'bg-amber-100 text-amber-700',
-  diproses: 'bg-blue-100 text-blue-700',
-  selesai: 'bg-emerald-100 text-emerald-700',
+  dijadwalkan: 'bg-amber-50 text-amber-700 ring-amber-100',
+  diproses: 'bg-blue-50 text-blue-700 ring-blue-100',
+  selesai: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+}
+
+const DATA_AWAL = {
+  nama: '',
+  hariIni: 0,
+  dikerjakan: 0,
+  selesaiBulanIni: 0,
+  sparepart: 0,
+  rataRataMenit: 0,
+  statusCounts: {},
+  mingguan: [],
+  antrian: [],
+  riwayat: [],
 }
 
 // ------------------------------------------------------------
@@ -55,15 +57,7 @@ export default function DashboardMekanik() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(null)
-  const [namaMekanik, setNamaMekanik] = useState('')
-
-  const [pekerjaanHariIni, setPekerjaanHariIni] = useState(0)
-  const [sedangDikerjakan, setSedangDikerjakan] = useState(0)
-  const [selesaiBulanIni, setSelesaiBulanIni] = useState(0)
-  const [sparepartTerpakai, setSparepartTerpakai] = useState(0)
-  const [rataRataMenit, setRataRataMenit] = useState(0)
-  const [antrian, setAntrian] = useState([])
-  const [riwayat, setRiwayat] = useState([])
+  const [data, setData] = useState(DATA_AWAL)
   const [updatingId, setUpdatingId] = useState(null)
 
   async function loadDashboard() {
@@ -72,37 +66,19 @@ export default function DashboardMekanik() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Belum login')
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single()
-      setNamaMekanik(profile?.full_name ?? '')
+      const now = new Date()
+      const todayStr = toISO(now)
+      const awalBulan = new Date(now.getFullYear(), now.getMonth(), 1)
+      const minggu = getWeekDays()
 
-      const todayStr = getTodayISO()
-      const { start, end } = getMonthRangeISO()
-
-      const [
-        hariIniRes,
-        dikerjakanRes,
-        bookingBulanIniRes,
-        antrianRes,
-        riwayatRes,
-      ] = await Promise.all([
-        supabase.from('booking').select('id', { count: 'exact', head: true }).eq('mekanik_id', user.id).eq('tanggal', todayStr),
-        supabase.from('booking').select('id', { count: 'exact', head: true }).eq('mekanik_id', user.id).eq('status', 'diproses'),
-        supabase
-          .from('booking')
-          .select('id')
-          .eq('mekanik_id', user.id)
-          .eq('status', 'selesai')
-          .gte('created_at', start)
-          .lt('created_at', end),
+      const [profileRes, semuaRes, antrianRes, riwayatRes] = await Promise.all([
+        supabase.from('profiles').select('full_name').eq('id', user.id).single(),
+        supabase.from('booking').select('id, status, tanggal, created_at').eq('mekanik_id', user.id),
         supabase
           .from('booking')
           .select(`
             id, tanggal, waktu, status, catatan,
-            customer:customer_id ( full_name ),
+            customer:customer_id ( full_name, avatar_url ),
             kendaraan:kendaraan_id ( merek, model, plat_nomor ),
             layanan:layanan_id ( nama, icon )
           `)
@@ -124,28 +100,33 @@ export default function DashboardMekanik() {
           .limit(4),
       ])
 
-      for (const res of [hariIniRes, dikerjakanRes, bookingBulanIniRes, antrianRes, riwayatRes]) {
+      for (const res of [semuaRes, antrianRes, riwayatRes]) {
         if (res.error) throw res.error
       }
 
-      setPekerjaanHariIni(hariIniRes.count ?? 0)
-      setSedangDikerjakan(dikerjakanRes.count ?? 0)
-      setAntrian(antrianRes.data ?? [])
-      setRiwayat(riwayatRes.data ?? [])
+      // Semua angka ringkasan dihitung dari satu query
+      const statusCounts = {}
+      const perHari = new Map()
+      const selesaiBulanIds = []
+      let hariIni = 0
+      for (const b of semuaRes.data ?? []) {
+        statusCounts[b.status] = (statusCounts[b.status] || 0) + 1
+        if (b.tanggal === todayStr) hariIni += 1
+        if (b.status !== 'dibatalkan' && b.tanggal) perHari.set(b.tanggal, (perHari.get(b.tanggal) || 0) + 1)
+        if (b.status === 'selesai' && new Date(b.created_at) >= awalBulan) selesaiBulanIds.push(b.id)
+      }
 
-      const bookingSelesaiIds = (bookingBulanIniRes.data ?? []).map((b) => b.id)
-      setSelesaiBulanIni(bookingSelesaiIds.length)
-
-      if (bookingSelesaiIds.length > 0) {
+      let sparepart = 0
+      let rataRataMenit = 0
+      if (selesaiBulanIds.length > 0) {
         const [sparepartRes, logRes] = await Promise.all([
-          supabase.from('servis_sparepart').select('qty').in('booking_id', bookingSelesaiIds),
-          supabase.from('booking_status_log').select('booking_id, status, created_at').in('booking_id', bookingSelesaiIds),
+          supabase.from('servis_sparepart').select('qty').in('booking_id', selesaiBulanIds),
+          supabase.from('booking_status_log').select('booking_id, status, created_at').in('booking_id', selesaiBulanIds),
         ])
         if (sparepartRes.error) throw sparepartRes.error
         if (logRes.error) throw logRes.error
 
-        const totalSparepart = (sparepartRes.data ?? []).reduce((sum, s) => sum + (s.qty || 0), 0)
-        setSparepartTerpakai(totalSparepart)
+        sparepart = (sparepartRes.data ?? []).reduce((sum, s) => sum + (s.qty || 0), 0)
 
         const perBooking = new Map()
         for (const log of logRes.data ?? []) {
@@ -154,18 +135,25 @@ export default function DashboardMekanik() {
             perBooking.get(log.booking_id)[log.status] = new Date(log.created_at)
           }
         }
-        const durasiList = []
+        const durasi = []
         for (const { diproses, selesai } of perBooking.values()) {
-          if (diproses && selesai && selesai > diproses) {
-            durasiList.push((selesai - diproses) / 60000)
-          }
+          if (diproses && selesai && selesai > diproses) durasi.push((selesai - diproses) / 60000)
         }
-        const rataRata = durasiList.length > 0 ? durasiList.reduce((a, b) => a + b, 0) / durasiList.length : 0
-        setRataRataMenit(rataRata)
-      } else {
-        setSparepartTerpakai(0)
-        setRataRataMenit(0)
+        rataRataMenit = durasi.length > 0 ? durasi.reduce((a, b) => a + b, 0) / durasi.length : 0
       }
+
+      setData({
+        nama: profileRes.data?.full_name ?? '',
+        hariIni,
+        dikerjakan: statusCounts.diproses || 0,
+        selesaiBulanIni: selesaiBulanIds.length,
+        sparepart,
+        rataRataMenit,
+        statusCounts,
+        mingguan: minggu.map((d) => ({ ...d, jumlah: perHari.get(d.key) || 0 })),
+        antrian: antrianRes.data ?? [],
+        riwayat: riwayatRes.data ?? [],
+      })
     } catch (err) {
       console.error('Gagal memuat dashboard mekanik:', err)
       setError(err.message || 'Gagal memuat data dashboard')
@@ -199,186 +187,238 @@ export default function DashboardMekanik() {
     return <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-400">Memuat dashboard...</div>
   }
 
-  const idDijadwalkanPertama = antrian.find((j) => j.status === 'dijadwalkan')?.id
+  const { nama, hariIni, dikerjakan, selesaiBulanIni, sparepart, rataRataMenit, statusCounts, mingguan, antrian, riwayat } = data
+
+  // Pekerjaan berikutnya: yang lagi dikerjakan dulu, kalau tidak ada ambil antrian terdepan
+  const berikutnya = antrian.find((j) => j.status === 'diproses') ?? antrian[0] ?? null
+  const totalMinggu = mingguan.reduce((sum, d) => sum + d.jumlah, 0)
+  const namaDepan = nama ? nama.split(' ')[0] : ''
 
   return (
-    <div className="min-h-full px-2 py-2">
-      {/* Topbar */}
-      <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
+    <div className="min-h-full">
+      {/* Header */}
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Selamat datang{namaMekanik ? `, ${namaMekanik.split(' ')[0]}` : ''}!
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Selamat datang{namaDepan ? `, ${namaDepan}` : ''}
           </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Berikut pekerjaan servis Anda hari ini,{' '}
-            {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            Pekerjaan servis Anda, {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handleRefresh}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-100 transition hover:text-indigo-600 hover:ring-indigo-100"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-500 transition hover:text-[#12123a]"
             title="Refresh data"
           >
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
           </button>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-900 text-sm font-semibold text-white">
-            {(namaMekanik || '?')[0]?.toUpperCase()}
-          </div>
+          <Link
+            to="/mekanik/pekerjaan"
+            className="rounded-full bg-[#12123a] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1c1c52]"
+          >
+            Daftar Pekerjaan
+          </Link>
+          <Link
+            to="/mekanik/riwayat"
+            className="rounded-full border border-[#12123a] px-6 py-3 text-sm font-semibold text-[#12123a] transition hover:bg-white"
+          >
+            Riwayat Pekerjaan
+          </Link>
         </div>
       </header>
 
       {error && (
-        <div className="mb-5 flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
+        <div className="mb-5 flex items-center gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           <AlertTriangle size={16} /> Gagal memuat sebagian data: {error}
         </div>
       )}
 
-      {/* Stat cards */}
-      <section className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
-        <StatCard icon={<Wrench size={20} />} accent="indigo" label="Pekerjaan Hari Ini" value={pekerjaanHariIni} />
-        <StatCard icon={<Clock size={20} />} accent="amber" label="Sedang Dikerjakan" value={sedangDikerjakan} />
-        <StatCard icon={<CheckCircle2 size={20} />} accent="emerald" label="Selesai Bulan Ini" value={selesaiBulanIni} />
-      </section>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Baris 1: statistik */}
+        <StatCard
+          highlight
+          title="Pekerjaan Hari Ini"
+          value={hariIni}
+          href="/mekanik/pekerjaan"
+          note={hariIni > 0 ? 'jadwal servis hari ini' : 'Belum ada jadwal hari ini'}
+        />
+        <StatCard
+          title="Sedang Dikerjakan"
+          value={dikerjakan}
+          href="/mekanik/pekerjaan"
+          note={dikerjakan > 0 ? 'pekerjaan berjalan' : 'Tidak ada yang berjalan'}
+        />
+        <StatCard
+          title="Selesai Bulan Ini"
+          value={selesaiBulanIni}
+          href="/mekanik/riwayat"
+          note="servis diselesaikan"
+        />
+        <StatCard
+          title="Sparepart Terpakai"
+          value={sparepart}
+          href="/mekanik/riwayat"
+          note="unit bulan ini"
+        />
 
-      {/* Antrian pekerjaan */}
-      <div className="mb-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900">Antrian Pekerjaan Berikutnya</h2>
-          <Link to="/mekanik/pekerjaan" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline">
-            Lihat Semua <ArrowUpRight size={12} />
-          </Link>
+        {/* Baris 2: analitik */}
+        <div className="rounded-3xl bg-white p-6 sm:col-span-2">
+          <div className="mb-6">
+            <h2 className="text-[15px] font-semibold text-slate-900">Pekerjaan Minggu Ini</h2>
+            <p className="mt-0.5 text-xs text-slate-400">{totalMinggu} pekerjaan, Senin sampai Minggu</p>
+          </div>
+          <PillChart data={mingguan} />
         </div>
 
-        {antrian.length === 0 ? (
-          <p className="py-6 text-center text-sm text-slate-400">Belum ada pekerjaan yang ditugaskan.</p>
-        ) : (
-          <ul className="space-y-2.5">
-            {antrian.map((job) => (
-              <li key={job.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 p-4 transition hover:bg-slate-50/70 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                    <IconFor name={job.layanan?.icon} />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {job.layanan?.nama ?? '-'} — {[job.kendaraan?.merek, job.kendaraan?.model].filter(Boolean).join(' ')} {job.kendaraan?.plat_nomor}
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      {job.customer?.full_name ?? '-'} • {formatTanggal(job.tanggal)}, {job.waktu?.slice(0, 5)} WIB
-                    </p>
-                    {job.catatan && <p className="mt-0.5 text-xs text-slate-400">Keluhan: {job.catatan}</p>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_CLASS[job.status]}`}>
-                    {STATUS_LABEL[job.status]}
-                  </span>
-                  {job.status === 'diproses' && (
-                    <button
-                      onClick={() => handleUpdateStatus(job.id, 'selesai')}
-                      disabled={updatingId === job.id}
-                      className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-800 disabled:opacity-50"
-                    >
-                      {updatingId === job.id ? '...' : 'Update Status'}
-                    </button>
-                  )}
-                  {job.status === 'dijadwalkan' && job.id === idDijadwalkanPertama && (
-                    <button
-                      onClick={() => handleUpdateStatus(job.id, 'diproses')}
-                      disabled={updatingId === job.id}
-                      className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-800 disabled:opacity-50"
-                    >
-                      {updatingId === job.id ? '...' : 'Mulai Servis'}
-                    </button>
-                  )}
-                  {job.status === 'dijadwalkan' && job.id !== idDijadwalkanPertama && (
-                    <button
-                      onClick={() => alert('Halaman detail pekerjaan belum dibikin.')}
-                      className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                    >
-                      Lihat Detail
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+        <div className="flex flex-col rounded-3xl bg-white p-6">
+          <h2 className="text-[15px] font-semibold text-slate-900">Pekerjaan Berikutnya</h2>
+          {berikutnya ? (
+            <>
+              <div className="mt-5 flex-1">
+                <p className="text-xl font-semibold leading-snug text-[#12123a]">{berikutnya.layanan?.nama ?? '-'}</p>
+                <p className="mt-1 text-sm text-slate-500">{berikutnya.customer?.full_name ?? '-'}</p>
+                <p className="mt-3 text-sm text-slate-400">
+                  {formatTanggal(berikutnya.tanggal)}
+                  {berikutnya.waktu ? `, ${berikutnya.waktu.slice(0, 5)} WIB` : ''}
+                </p>
+                <p className="text-sm text-slate-400">
+                  {[berikutnya.kendaraan?.merek, berikutnya.kendaraan?.model].filter(Boolean).join(' ') || '-'}
+                  {berikutnya.kendaraan?.plat_nomor ? ` · ${berikutnya.kendaraan.plat_nomor}` : ''}
+                </p>
+              </div>
+              <div className="mt-5 space-y-2">
+                {berikutnya.status === 'diproses' && (
+                  <button
+                    onClick={() => handleUpdateStatus(berikutnya.id, 'selesai')}
+                    disabled={updatingId === berikutnya.id}
+                    className="w-full rounded-full bg-[#12123a] py-3.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
+                  >
+                    {updatingId === berikutnya.id ? '...' : 'Tandai Selesai'}
+                  </button>
+                )}
+                {berikutnya.status === 'dijadwalkan' && (
+                  <button
+                    onClick={() => handleUpdateStatus(berikutnya.id, 'diproses')}
+                    disabled={updatingId === berikutnya.id}
+                    className="w-full rounded-full bg-[#12123a] py-3.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
+                  >
+                    {updatingId === berikutnya.id ? '...' : 'Mulai Servis'}
+                  </button>
+                )}
+                <Link
+                  to={`/mekanik/pekerjaan/${berikutnya.id}`}
+                  className="block rounded-full border border-[#12123a] py-3 text-center text-sm font-semibold text-[#12123a] transition hover:bg-slate-50"
+                >
+                  Lihat Detail
+                </Link>
+              </div>
+            </>
+          ) : (
+            <p className="mt-5 flex-1 text-sm text-slate-400">Belum ada pekerjaan yang ditugaskan.</p>
+          )}
+        </div>
 
-      {/* Riwayat + Ringkasan bulan ini */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+        <div className="rounded-3xl bg-white p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Riwayat Pekerjaan Terakhir</h2>
-            <Link to="/mekanik/riwayat" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline">
-              Lihat Semua <ArrowUpRight size={12} />
-            </Link>
+            <h2 className="text-[15px] font-semibold text-slate-900">Riwayat Terakhir</h2>
+            <Link to="/mekanik/riwayat" className="text-xs font-semibold text-[#12123a] hover:underline">Semua</Link>
           </div>
           {riwayat.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">Belum ada riwayat pekerjaan.</p>
+            <p className="py-4 text-sm text-slate-400">Belum ada riwayat pekerjaan.</p>
           ) : (
-            <ul className="divide-y divide-slate-50">
+            <ul className="space-y-4">
               {riwayat.map((r) => (
-                <li key={r.id} className="flex items-center gap-3 py-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                    <IconFor name={r.layanan?.icon} size={14} />
+                <li key={r.id} className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[#12123a]">
+                    <IconFor name={r.layanan?.icon} size={16} />
                   </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900">{r.layanan?.nama ?? '-'}</p>
-                    <p className="text-xs text-slate-400">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900">{r.layanan?.nama ?? '-'}</p>
+                    <p className="truncate text-xs text-slate-400">
                       {[r.kendaraan?.merek, r.kendaraan?.model].filter(Boolean).join(' ')} {r.kendaraan?.plat_nomor}
                     </p>
                   </div>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Selesai</span>
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Ringkasan Bulan Ini</h2>
-          <ul className="divide-y divide-slate-50">
-            <RingkasanRow icon={<CheckCircle2 size={15} className="text-emerald-600" />} label="Servis Diselesaikan" value={selesaiBulanIni} />
-            <RingkasanRow icon={<Package size={15} className="text-indigo-600" />} label="Sparepart Terpakai" value={sparepartTerpakai} />
-            <RingkasanRow icon={<Timer size={15} className="text-amber-600" />} label="Rata-rata Waktu Servis" value={formatDurasi(rataRataMenit)} />
-          </ul>
-          {rataRataMenit === 0 && selesaiBulanIni > 0 && (
-            <p className="mt-3 text-xs text-slate-400">
-              * Rata-rata waktu belum bisa dihitung — belum ada riwayat status "Dikerjakan → Selesai" yang lengkap di log bulan ini.
-            </p>
+        {/* Baris 3: antrian, progres, waktu */}
+        <div className="rounded-3xl bg-white p-6 sm:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-[15px] font-semibold text-slate-900">Antrian Pekerjaan</h2>
+            <Link
+              to="/mekanik/pekerjaan"
+              className="rounded-full border border-[#12123a] px-4 py-1.5 text-xs font-semibold text-[#12123a] transition hover:bg-slate-50"
+            >
+              Lihat Semua
+            </Link>
+          </div>
+          {antrian.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-400">Belum ada pekerjaan yang ditugaskan.</p>
+          ) : (
+            <ul className="space-y-3">
+              {antrian.map((job) => (
+                <li key={job.id} className="flex items-center gap-3">
+                  <Avatar nama={job.customer?.full_name} url={job.customer?.avatar_url} className="h-11 w-11 text-sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900">
+                      {job.layanan?.nama ?? '-'}
+                      <span className="font-normal text-slate-400"> · {job.customer?.full_name ?? '-'}</span>
+                    </p>
+                    <p className="truncate text-xs text-slate-400">
+                      {[job.kendaraan?.merek, job.kendaraan?.model].filter(Boolean).join(' ')} {job.kendaraan?.plat_nomor}
+                      {' · '}
+                      {formatTanggal(job.tanggal)}
+                      {job.waktu ? `, ${job.waktu.slice(0, 5)}` : ''}
+                    </p>
+                  </div>
+                  <span className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${STATUS_CLASS[job.status]}`}>
+                    {STATUS_LABEL[job.status]}
+                  </span>
+                  <Link
+                    to={`/mekanik/pekerjaan/${job.id}`}
+                    className="hidden rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 sm:block"
+                  >
+                    Detail
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
+        </div>
+
+        <div className="rounded-3xl bg-white p-6">
+          <h2 className="mb-2 text-[15px] font-semibold text-slate-900">Progres Pekerjaan</h2>
+          <Gauge
+            selesai={statusCounts.selesai || 0}
+            diproses={statusCounts.diproses || 0}
+            pending={statusCounts.dijadwalkan || 0}
+            caption="Pekerjaan selesai"
+          />
+        </div>
+
+        <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#12123a] via-[#181850] to-[#2b2b7a] p-6 text-white">
+          <div className="pointer-events-none absolute -bottom-16 -right-16 h-56 w-56 rounded-full border-[22px] border-white/5" />
+          <div className="pointer-events-none absolute -bottom-6 -right-6 h-32 w-32 rounded-full border-[14px] border-white/5" />
+          <p className="relative text-[15px] font-medium">Rata-rata Waktu Servis</p>
+          <div className="relative my-6">
+            <p className="text-5xl font-bold tracking-tight">{formatDurasi(rataRataMenit)}</p>
+            <p className="mt-1 text-xs text-white/60">
+              {rataRataMenit > 0 ? 'dari servis selesai bulan ini' : 'Belum ada log Dikerjakan ke Selesai bulan ini'}
+            </p>
+          </div>
+          <Link
+            to="/mekanik/riwayat"
+            className="relative rounded-full bg-white py-3.5 text-center text-sm font-semibold text-[#12123a] transition hover:bg-slate-100"
+          >
+            Lihat Riwayat
+          </Link>
         </div>
       </div>
     </div>
-  )
-}
-
-function StatCard({ icon, label, value, accent = 'indigo' }) {
-  const accents = {
-    indigo: 'bg-indigo-50 text-indigo-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-600',
-  }
-  return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100 transition hover:shadow-md">
-      <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</span>
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
-    </div>
-  )
-}
-
-function RingkasanRow({ icon, label, value }) {
-  return (
-    <li className="flex items-center justify-between py-3">
-      <div className="flex items-center gap-2.5 text-sm text-slate-700">
-        {icon}
-        {label}
-      </div>
-      <span className="text-sm font-semibold text-slate-900">{value}</span>
-    </li>
   )
 }

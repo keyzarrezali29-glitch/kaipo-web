@@ -1,8 +1,26 @@
 import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { User, Camera, AlertCircle, CheckCircle2, Lock } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import Avatar from '../../components/Avatar'
+
+function Notice({ type, message }) {
+  if (!message) return null
+  const error = type === 'error'
+  return (
+    <div className={`mb-5 flex items-start gap-2 rounded-2xl p-3 text-xs font-medium ${error ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'}`}>
+      {error ? <AlertCircle size={14} className="mt-0.5 shrink-0" /> : <CheckCircle2 size={14} className="mt-0.5 shrink-0" />}
+      <span>{message}</span>
+    </div>
+  )
+}
 
 export default function CustomerPengaturan() {
+  // Disediakan CustomerLayout.jsx lewat <Outlet context={{ refreshProfil }} />.
+  // Kalau halaman ini dibuka di luar CustomerLayout, refreshProfil bakal undefined,
+  // jadi dipanggil pakai optional chaining biar gak error.
+  const { refreshProfil } = useOutletContext() ?? {}
+
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
 
@@ -79,6 +97,9 @@ export default function CustomerPengaturan() {
       setProfile((p) => ({ ...p, full_name: fullName, phone, avatar_url: avatarUrl }))
       setAvatarFile(null)
       setNoticeProfil({ type: 'success', message: 'Profil berhasil diperbarui.' })
+
+      // Suruh CustomerLayout.jsx muat ulang profil biar avatar di pojok kanan atas ikut berubah
+      refreshProfil?.()
     } catch (err) {
       console.error('Gagal menyimpan profil:', err)
       setNoticeProfil({ type: 'error', message: err.message || 'Gagal menyimpan profil' })
@@ -117,76 +138,67 @@ export default function CustomerPengaturan() {
     return <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-400">Memuat pengaturan...</div>
   }
 
+  const inputClass = 'w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#12123a]'
+
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
+    <div className="min-h-full">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Pengaturan</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Pengaturan</h1>
         <p className="mt-1 text-sm text-slate-400">Kelola informasi profil dan keamanan akun Anda</p>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Profil */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm lg:col-span-2">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <User size={16} className="text-indigo-600" /> Informasi Profil
+        <div className="rounded-3xl bg-white p-6 lg:col-span-2">
+          <h2 className="mb-5 flex items-center gap-2 text-[15px] font-semibold text-slate-900">
+            <User size={17} className="text-[#12123a]" /> Informasi Profil
           </h2>
 
-          {noticeProfil.message && (
-            <div className={`mb-4 flex items-start gap-2 rounded-lg p-3 text-xs font-medium ${noticeProfil.type === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'}`}>
-              {noticeProfil.type === 'error' ? <AlertCircle size={14} className="mt-0.5 shrink-0" /> : <CheckCircle2 size={14} className="mt-0.5 shrink-0" />}
-              <span>{noticeProfil.message}</span>
-            </div>
-          )}
+          <Notice type={noticeProfil.type} message={noticeProfil.message} />
 
           {/* Foto profil */}
-          <div className="mb-5 flex items-center gap-4">
-            <label className="group relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full bg-slate-100">
-              {avatarPreview ? (
-                <img src={avatarPreview} alt="Avatar" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-slate-300">
-                  <User size={28} />
-                </div>
-              )}
+          <div className="mb-6 flex items-center gap-5">
+            <label className="group relative block h-24 w-24 shrink-0 cursor-pointer overflow-hidden rounded-full">
+              <Avatar nama={fullName} url={avatarPreview} className="h-24 w-24 text-2xl" />
               <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition group-hover:opacity-100">
-                <Camera size={18} className="text-white" />
+                <Camera size={20} className="text-white" />
               </span>
               <input type="file" accept="image/*" onChange={handlePilihAvatar} className="hidden" />
             </label>
             <div>
               <p className="text-sm font-semibold text-slate-900">Foto Profil</p>
-              <p className="text-xs text-slate-400">Klik foto untuk mengganti. Format JPG/PNG.</p>
+              <p className="mt-0.5 text-xs text-slate-400">Klik foto untuk mengganti. Format JPG/PNG.</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-500">Nama Lengkap</label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-500">Nama Lengkap</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-500">Email</label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-500">Email</label>
               <input
                 type="email"
                 value={profile?.email ?? ''}
                 disabled
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-400"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-400"
               />
               <p className="mt-1 text-[11px] text-slate-400">Email tidak dapat diubah.</p>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-500">Nomor Telepon</label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-500">Nomor Telepon</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="08xxxxxxxxxx"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
+                className={inputClass}
               />
             </div>
           </div>
@@ -194,43 +206,38 @@ export default function CustomerPengaturan() {
           <button
             onClick={handleSimpanProfil}
             disabled={savingProfil}
-            className="mt-5 rounded-xl bg-[#12123a] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52] disabled:opacity-50"
+            className="mt-6 rounded-full bg-[#12123a] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
           >
             {savingProfil ? 'Menyimpan...' : 'Simpan Perubahan'}
           </button>
         </div>
 
         {/* Ganti Password */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <Lock size={16} className="text-indigo-600" /> Ganti Password
+        <div className="h-fit rounded-3xl bg-white p-6">
+          <h2 className="mb-5 flex items-center gap-2 text-[15px] font-semibold text-slate-900">
+            <Lock size={17} className="text-[#12123a]" /> Ganti Password
           </h2>
 
-          {noticePassword.message && (
-            <div className={`mb-4 flex items-start gap-2 rounded-lg p-3 text-xs font-medium ${noticePassword.type === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'}`}>
-              {noticePassword.type === 'error' ? <AlertCircle size={14} className="mt-0.5 shrink-0" /> : <CheckCircle2 size={14} className="mt-0.5 shrink-0" />}
-              <span>{noticePassword.message}</span>
-            </div>
-          )}
+          <Notice type={noticePassword.type} message={noticePassword.message} />
 
           <div className="space-y-4">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-500">Password Baru</label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-500">Password Baru</label>
               <input
                 type="password"
                 value={passwordBaru}
                 onChange={(e) => setPasswordBaru(e.target.value)}
                 placeholder="Minimal 6 karakter"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-500">Konfirmasi Password</label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-500">Konfirmasi Password</label>
               <input
                 type="password"
                 value={konfirmasiPassword}
                 onChange={(e) => setKonfirmasiPassword(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
+                className={inputClass}
               />
             </div>
           </div>
@@ -238,7 +245,7 @@ export default function CustomerPengaturan() {
           <button
             onClick={handleGantiPassword}
             disabled={savingPassword}
-            className="mt-5 w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="mt-6 w-full rounded-full border border-[#12123a] py-3 text-sm font-semibold text-[#12123a] transition hover:bg-slate-50 disabled:opacity-50"
           >
             {savingPassword ? 'Menyimpan...' : 'Ubah Password'}
           </button>

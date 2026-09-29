@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom'
 import { 
-  Wrench, Settings, Zap, ShieldCheck, ArrowRight, 
-  Phone, Mail, MapPin, CheckCircle, Award, Star 
+  Wrench, Settings, Zap, ShieldCheck, ArrowRight, ArrowUpRight,
+  Phone, Mail, MapPin, CheckCircle, Award, Star, 
+  CalendarCheck, ClipboardCheck, ThumbsUp
 } from 'lucide-react'
 import logoKaipo from '../assets/logo-kai-po.png'
 
 const services = [
-  { title: 'Servis Berkala', desc: 'Pengecekan & perawatan rutin menyeluruh.', icon: Wrench },
-  { title: 'Perbaikan Mesin', desc: 'Diagnosa dan perbaikan mesin presisi tinggi.', icon: Settings },
-  { title: 'Tune Up', desc: 'Optimalkan tenaga & efisiensi bahan bakar.', icon: Zap },
-  { title: 'Rem & Kaki-Kaki', desc: 'Cek kampas, suspensi & spooring balancing.', icon: ShieldCheck },
+  { title: 'Servis Berkala', desc: 'Pengecekan & perawatan rutin menyeluruh.', icon: Wrench, harga: '250rb' },
+  { title: 'Perbaikan Mesin', desc: 'Diagnosa dan perbaikan mesin presisi tinggi.', icon: Settings, harga: '450rb' },
+  { title: 'Tune Up', desc: 'Optimalkan tenaga & efisiensi bahan bakar.', icon: Zap, harga: '350rb' },
+  { title: 'Rem & Kaki-Kaki', desc: 'Cek kampas, suspensi & spooring balancing.', icon: ShieldCheck, harga: '300rb' },
 ]
 
 const testimonials = [
@@ -25,92 +26,24 @@ const faqs = [
   { q: 'Bagaimana cara booking janji servis?', a: 'Anda bisa langsung mendaftar di website kami, lalu melakukan booking melalui aplikasi mobile KAI-PO.' },
 ]
 
-function Wheel({ cx, cy }) {
-  return (
-    <g stroke="#0a1128" strokeWidth="3" fill="none">
-      <circle cx={cx} cy={cy} r="34" />
-      <circle cx={cx} cy={cy} r="14" strokeWidth="2" />
-      {[0, 90, 180, 270].map((deg) => {
-        const a = (deg * Math.PI) / 180
-        return (
-          <line
-            key={deg}
-            x1={cx + 10 * Math.cos(a)}
-            y1={cy + 10 * Math.sin(a)}
-            x2={cx + 30 * Math.cos(a)}
-            y2={cy + 30 * Math.sin(a)}
-            strokeWidth="2"
-          />
-        )
-      })}
-    </g>
-  )
+const langkah = [
+  { icon: CalendarCheck, title: 'Booking Online', desc: 'Pilih layanan, kendaraan, dan jadwal yang sesuai lewat website atau aplikasi.' },
+  { icon: ClipboardCheck, title: 'Diagnosa & Konfirmasi', desc: 'Teknisi kami memeriksa kendaraan dan mengonfirmasi biaya sebelum dikerjakan.' },
+  { icon: ThumbsUp, title: 'Servis & Ambil', desc: 'Kendaraan dikerjakan oleh teknisi ahli, siap diambil sesuai estimasi waktu.' },
+]
+
+const FOTO = {
+  hero: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1400&q=80',
+  tentang: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=900&q=80',
+  strip1: 'https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=600&q=80',
+  strip2: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=600&q=80',
+  strip3: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=600&q=80',
+  promo: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1400&q=80',
 }
 
-function CarBlueprint() {
-  return (
-    <div className="relative w-full">
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: 'radial-gradient(rgba(10,17,40,0.18) 1px, transparent 1px)',
-          backgroundSize: '22px 22px',
-        }}
-      />
-      <svg viewBox="0 0 600 270" className="relative w-full h-auto">
-        {/* bayangan */}
-        <ellipse cx="300" cy="215" rx="260" ry="10" fill="#0a1128" opacity="0.06" />
-
-        {/* bodi mobil */}
-        <path
-          d="M40,185 C40,160 60,150 90,148 L150,145 C175,105 230,80 300,78 C365,80 410,100 430,130 L480,138 C505,140 525,155 530,175 L530,185 L500,185 C500,170 485,160 470,160 C455,160 440,170 440,185 L160,185 C160,170 145,160 130,160 C115,160 100,170 100,185 Z"
-          fill="none"
-          stroke="#0a1128"
-          strokeWidth="3"
-          strokeLinejoin="round"
-        />
-
-        {/* garis kaca depan */}
-        <line x1="195" y1="110" x2="230" y2="145" stroke="#0a1128" strokeWidth="2" />
-        {/* garis karakter body */}
-        <line x1="100" y1="160" x2="470" y2="160" stroke="#0a1128" strokeWidth="1" opacity="0.3" />
-        {/* lampu depan */}
-        <rect x="505" y="155" width="14" height="8" rx="4" fill="#0a1128" />
-        {/* spoiler belakang */}
-        <rect x="40" y="135" width="35" height="4" rx="2" fill="#0a1128" />
-        <line x1="55" y1="139" x2="55" y2="148" stroke="#0a1128" strokeWidth="2" />
-        <line x1="75" y1="139" x2="75" y2="148" stroke="#0a1128" strokeWidth="2" />
-
-        <Wheel cx={170} cy={185} />
-        <Wheel cx={430} cy={185} />
-
-        {/* anotasi teknis */}
-        <g stroke="#0a1128" strokeWidth="1">
-          <circle cx="500" cy="140" r="3" fill="#0a1128" />
-          <line x1="500" y1="140" x2="505" y2="55" />
-          <text x="510" y="50" fontSize="12" fill="#0a1128" fontFamily="monospace">Mesin & transmisi</text>
-
-          <circle cx="430" cy="185" r="3" fill="#0a1128" />
-          <line x1="430" y1="185" x2="430" y2="222" />
-          <text x="430" y="238" fontSize="12" fill="#0a1128" fontFamily="monospace" textAnchor="middle">Rem & kaki-kaki</text>
-
-          <circle cx="300" cy="78" r="3" fill="#0a1128" />
-          <line x1="300" y1="78" x2="300" y2="28" />
-          <text x="300" y="20" fontSize="12" fill="#0a1128" fontFamily="monospace" textAnchor="middle">Bodi & cat</text>
-        </g>
-
-        {/* garis dimensi */}
-        <g stroke="#0a1128" strokeWidth="1" opacity="0.4">
-          <line x1="40" y1="255" x2="530" y2="255" />
-          <line x1="40" y1="249" x2="40" y2="261" />
-          <line x1="530" y1="249" x2="530" y2="261" />
-        </g>
-        <text x="285" y="267" fontSize="11" fill="#0a1128" fontFamily="monospace" textAnchor="middle" opacity="0.6">
-          4.720 mm
-        </text>
-      </svg>
-    </div>
-  )
+const AVATAR_COLORS = ['bg-indigo-900', 'bg-violet-600', 'bg-sky-700']
+function inisial(nama) {
+  return nama.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 }
 
 function TreadDivider() {
@@ -130,15 +63,15 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#0a1128] selection:text-white">
 
-      {/* NAVBAR */}
-      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
+      {/* NAVBAR — full width, sticky, aman dari overlap saat scroll/anchor */}
+      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-md">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <img src={logoKaipo} alt="Kai-Po" className="h-10 w-10 object-contain mix-blend-multiply" />
-            <span className="text-xl font-black tracking-tight text-[#0a1128]">KAI-PO</span>
+            <img src={logoKaipo} alt="Kai-Po" className="h-9 w-9 object-contain mix-blend-multiply" />
+            <span className="text-lg font-black tracking-tight text-[#0a1128]">KAI-PO</span>
           </div>
 
-          <div className="hidden gap-10 text-sm font-medium text-slate-500 md:flex">
+          <div className="hidden gap-8 text-sm font-medium text-slate-500 md:flex">
             <a href="#tentang" className="transition hover:text-[#0a1128]">Tentang</a>
             <a href="#layanan" className="transition hover:text-[#0a1128]">Layanan</a>
             <a href="#testimoni" className="transition hover:text-[#0a1128]">Testimoni</a>
@@ -147,57 +80,107 @@ export default function LandingPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link to="/login" className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#0a1128] hover:text-[#0a1128]">
+            <Link to="/login" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:text-[#0a1128]">
               Login
             </Link>
-            <Link to="/register" className="rounded-lg bg-[#0a1128] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#182a72] shadow-lg shadow-[#0a1128]/10">
+            <Link to="/register" className="rounded-full bg-[#0a1128] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#182a72]">
               Daftar
             </Link>
           </div>
         </nav>
       </header>
 
-      {/* HERO */}
-      <section className="mx-auto max-w-7xl px-6 pt-16 pb-20 md:pt-24">
-        <div className="grid grid-cols-1 items-center gap-16 md:grid-cols-2">
-          <div className="space-y-8">
-            <div className="flex items-center gap-3 text-slate-500">
-              <span className="h-px w-8 bg-[#0a1128]" />
-              <span className="text-sm">Bengkel spesialis mobil sport</span>
+      {/* HERO — foto mobil full-bleed */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={FOTO.hero} alt="Sport car" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0a1128] via-[#0a1128]/85 to-[#0a1128]/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a1128] via-transparent to-transparent" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-6 pt-20 pb-24 md:pt-28 md:pb-32">
+          <div className="max-w-xl space-y-7 text-white">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1.5 ring-1 ring-white/15 backdrop-blur-sm">
+                <div className="flex text-amber-400">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} size={11} fill="currentColor" />
+                  ))}
+                </div>
+                <span className="text-xs font-semibold text-white">4.9 dari 500+ pelanggan</span>
+              </div>
             </div>
 
-            <h1 className="text-5xl font-black leading-[1.05] tracking-tight text-[#0a1128] md:text-7xl">
+            <h1 className="text-5xl font-black leading-[1.05] tracking-tight md:text-7xl">
               Perawatan terbaik <br />
               untuk kendaraan <br />
-              <span className="text-slate-300">performa tinggi.</span>
+              <span className="text-white/40">performa tinggi.</span>
             </h1>
 
-            <p className="max-w-md text-base text-slate-500 leading-relaxed">
+            <p className="max-w-md text-base text-white/70 leading-relaxed">
               Platform bengkel modern dengan teknisi profesional dan teknologi terkini.
               Kami memastikan performa kendaraan Anda selalu dalam kondisi prima.
             </p>
 
             <div className="flex flex-wrap gap-4 pt-2">
-              <a href="#layanan" className="rounded-lg bg-[#0a1128] px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#0a1128]/20 transition hover:bg-[#182a72]">
+              <a href="#layanan" className="rounded-full bg-white px-8 py-3.5 text-sm font-bold text-[#0a1128] transition hover:bg-slate-100">
                 Lihat Layanan
               </a>
-              <Link to="/register" className="rounded-lg border-2 border-slate-200 px-8 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-[#0a1128] hover:bg-slate-50">
+              <Link to="/register" className="rounded-full border-2 border-white/30 px-8 py-3.5 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10">
                 Daftar Sekarang
               </Link>
             </div>
           </div>
+        </div>
 
-          <CarBlueprint />
+        {/* Kartu statistik ngambang di bawah hero */}
+        <div className="relative mx-auto -mb-16 max-w-5xl px-6">
+          <div className="grid grid-cols-2 divide-x divide-slate-100 rounded-3xl bg-white px-4 py-8 shadow-2xl sm:grid-cols-4 sm:px-2">
+            <Stat icon={Wrench} number="2.4K+" label="Layanan selesai" />
+            <Stat icon={ThumbsUp} number="98%" label="Kepuasan pelanggan" />
+            <Stat icon={ShieldCheck} number="15+" label="Teknisi ahli" />
+            <Stat icon={Phone} number="24/7" label="Dukungan" />
+          </div>
+        </div>
+      </section>
+
+      {/* Spacer buat ngasih ruang kartu ngambang */}
+      <div className="h-16" />
+
+      {/* STRIP FOTO — 3 potongan bengkel/mesin */}
+      <section className="mx-auto max-w-7xl px-6 pt-16">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { src: FOTO.strip1, label: 'Diagnostik mesin presisi' },
+            { src: FOTO.strip2, label: 'Teknisi berpengalaman' },
+            { src: FOTO.strip3, label: 'Komponen original' },
+          ].map((item, i) => (
+            <div key={i} className="group relative h-56 overflow-hidden rounded-3xl">
+              <img
+                src={item.src}
+                alt={item.label}
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a1128]/80 via-[#0a1128]/10 to-transparent" />
+              <p className="absolute bottom-4 left-5 text-sm font-bold text-white">{item.label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       <TreadDivider />
 
-      {/* TENTANG */}
-      <section id="tentang" className="relative overflow-hidden border-b border-slate-100 bg-slate-50/50 py-24">
-        <Wrench className="pointer-events-none absolute -left-10 -top-10 text-[#0a1128]/5" size={280} strokeWidth={1} />
-        <div className="relative mx-auto max-w-7xl px-6">
+      {/* TENTANG — foto + teks */}
+      <section id="tentang" className="scroll-mt-20 border-b border-slate-100 bg-slate-50/50 py-24">
+        <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
+            <div className="relative">
+              <img src={FOTO.tentang} alt="Teknisi Kai-Po" className="h-[420px] w-full rounded-3xl object-cover" />
+              <div className="absolute -bottom-6 -right-4 rounded-2xl bg-[#0a1128] px-6 py-5 text-white shadow-xl sm:-right-6">
+                <p className="font-mono text-3xl font-bold">20+</p>
+                <p className="text-xs text-white/60">Tahun pengalaman</p>
+              </div>
+            </div>
             <div>
               <h2 className="text-4xl font-extrabold text-[#0a1128] mb-6">
                 Lebih dari sekadar <br /> bengkel biasa
@@ -222,38 +205,39 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-center">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#0a1128] text-white p-6 rounded-2xl shadow-xl">
-                  <Award className="mb-2" size={28} />
-                  <p className="font-mono text-2xl font-bold">20+</p>
-                  <p className="text-xs text-white/60">Tahun pengalaman</p>
-                </div>
-                <div className="bg-white border border-slate-200 p-6 rounded-2xl">
-                  <Zap className="mb-2 text-[#0a1128]" size={28} />
-                  <p className="font-mono text-2xl font-bold text-[#0a1128]">1K+</p>
-                  <p className="text-xs text-slate-400">Pelanggan puas</p>
-                </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CARA KERJA — 3 langkah */}
+      <section className="mx-auto max-w-7xl px-6 py-24">
+        <div className="mb-14 max-w-lg">
+          <h2 className="text-4xl font-extrabold text-[#0a1128] md:text-5xl">Booking semudah tiga langkah</h2>
+          <p className="mt-4 text-slate-500 text-base">
+            Prosesnya cepat, transparan, dan bisa dipantau dari mana saja.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {langkah.map((l, idx) => (
+            <div key={idx} className="relative rounded-3xl bg-slate-50 p-8">
+              <span className="absolute right-6 top-6 font-mono text-5xl font-black text-[#0a1128]/[0.06]">
+                0{idx + 1}
+              </span>
+              <div className="relative mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0a1128] text-white">
+                <l.icon size={20} />
               </div>
+              <h3 className="relative mb-2 text-lg font-bold text-slate-900">{l.title}</h3>
+              <p className="relative text-sm text-slate-500 leading-relaxed">{l.desc}</p>
             </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* STATISTIK — dashboard cluster */}
-      <section className="border-b border-slate-100 bg-white">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid grid-cols-2 divide-x divide-y divide-slate-200 md:grid-cols-4 md:divide-y-0">
-            <Stat number="2.4K+" label="Layanan selesai" />
-            <Stat number="98%" label="Kepuasan pelanggan" />
-            <Stat number="15+" label="Teknisi ahli" />
-            <Stat number="24/7" label="Dukungan" />
-          </div>
-        </div>
-      </section>
+      <TreadDivider />
 
-      {/* LAYANAN — icon mur/baut */}
-      <section id="layanan" className="mx-auto max-w-7xl px-6 py-24">
+      {/* LAYANAN — icon mur/baut + harga */}
+      <section id="layanan" className="scroll-mt-20 mx-auto max-w-7xl px-6 py-24">
         <div className="mb-14 max-w-lg">
           <h2 className="text-4xl font-extrabold text-[#0a1128] md:text-5xl">Solusi perawatan lengkap</h2>
           <p className="mt-4 text-slate-500 text-base">
@@ -263,12 +247,17 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {services.map((service, idx) => (
-            <div key={idx} className="group rounded-2xl border border-slate-100 p-8 transition hover:border-[#0a1128]/15 hover:bg-slate-50">
-              <div
-                className="mb-5 flex h-14 w-14 items-center justify-center bg-[#0a1128] text-white"
-                style={{ clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' }}
-              >
-                <service.icon size={22} />
+            <div key={idx} className="group rounded-3xl border border-slate-100 p-8 transition hover:border-[#0a1128]/15 hover:bg-slate-50">
+              <div className="mb-5 flex items-start justify-between">
+                <div
+                  className="flex h-14 w-14 items-center justify-center bg-[#0a1128] text-white"
+                  style={{ clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' }}
+                >
+                  <service.icon size={22} />
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                  mulai {service.harga}
+                </span>
               </div>
               <h3 className="mb-2 text-lg font-bold text-slate-900">{service.title}</h3>
               <p className="text-sm text-slate-500 leading-relaxed">{service.desc}</p>
@@ -283,21 +272,26 @@ export default function LandingPage() {
       <TreadDivider />
 
       {/* TESTIMONI */}
-      <section id="testimoni" className="bg-slate-50/50 border-b border-slate-100 py-24">
+      <section id="testimoni" className="scroll-mt-20 bg-slate-50/50 border-b border-slate-100 py-24">
         <div className="mx-auto max-w-7xl px-6">
           <h2 className="mb-14 text-4xl font-extrabold text-[#0a1128] md:text-5xl">Apa kata pelanggan kami?</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {testimonials.map((review, idx) => (
-              <div key={idx} className="border-t-2 border-[#0a1128] bg-white p-8">
+              <div key={idx} className="rounded-3xl border-t-4 border-[#0a1128] bg-white p-8">
                 <div className="mb-4 flex gap-1 text-[#0a1128]">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} size={16} fill="currentColor" />
                   ))}
                 </div>
                 <p className="text-slate-600 mb-6">&ldquo;{review.text}&rdquo;</p>
-                <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                  <span className="text-sm font-bold text-[#0a1128]">{review.name}</span>
-                  <span className="text-xs text-slate-400">{review.car}</span>
+                <div className="flex items-center gap-3 border-t border-slate-100 pt-4">
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}>
+                    {inisial(review.name)}
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-[#0a1128]">{review.name}</p>
+                    <p className="text-xs text-slate-400">{review.car}</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -306,11 +300,11 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="mx-auto max-w-7xl px-6 py-24">
+      <section id="faq" className="scroll-mt-20 mx-auto max-w-7xl px-6 py-24">
         <h2 className="mb-14 text-4xl font-extrabold text-[#0a1128] md:text-5xl">Pertanyaan umum</h2>
-        <div className="mx-auto max-w-3xl space-y-4">
+        <div className="mx-auto max-w-3xl space-y-3">
           {faqs.map((faq, idx) => (
-            <details key={idx} className="group rounded-xl border border-slate-100 bg-white p-6 cursor-pointer">
+            <details key={idx} className="group rounded-2xl border border-slate-100 bg-white p-6 cursor-pointer">
               <summary className="flex list-none items-center justify-between font-bold text-slate-800">
                 {faq.q}
                 <span className="text-[#0a1128] transition group-open:rotate-180">▾</span>
@@ -321,17 +315,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PROMO BANNER — aksen checkered flag */}
+      {/* PROMO BANNER — foto mobil malam */}
       <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="relative flex flex-col items-center justify-between gap-8 overflow-hidden rounded-2xl bg-[#0a1128] p-12 md:flex-row md:p-16">
-          <div
-            className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rotate-12"
-            style={{
-              backgroundImage: 'repeating-conic-gradient(#ffffff 0% 25%, transparent 0% 50%)',
-              backgroundSize: '16px 16px',
-              opacity: 0.15,
-            }}
-          />
+        <div className="relative flex flex-col items-center justify-between gap-8 overflow-hidden rounded-3xl p-12 md:flex-row md:p-16">
+          <img src={FOTO.promo} alt="Sport car" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0a1128]/95 via-[#0a1128]/85 to-[#0a1128]/50" />
 
           <div className="relative z-10 max-w-xl">
             <h2 className="text-4xl font-extrabold text-white leading-tight">
@@ -341,14 +329,14 @@ export default function LandingPage() {
               Daftar sekarang dan dapatkan layanan eksklusif dengan teknisi terbaik kami.
             </p>
           </div>
-          <Link to="/register" className="relative z-10 whitespace-nowrap rounded-full bg-white px-10 py-4 text-sm font-bold text-[#0a1128] transition hover:bg-slate-50">
-            Daftar & Booking
+          <Link to="/register" className="relative z-10 flex items-center gap-2 whitespace-nowrap rounded-full bg-white px-10 py-4 text-sm font-bold text-[#0a1128] transition hover:bg-slate-50">
+            Daftar & Booking <ArrowUpRight size={16} />
           </Link>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer id="kontak" className="bg-[#0a1128] pt-20 pb-8 text-white">
+      <footer id="kontak" className="scroll-mt-20 bg-[#0a1128] pt-20 pb-8 text-white">
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-16 grid grid-cols-1 gap-12 md:grid-cols-4">
             <div className="col-span-1 space-y-4 md:col-span-1">
@@ -412,10 +400,11 @@ export default function LandingPage() {
   )
 }
 
-function Stat({ number, label }) {
+function Stat({ icon: Icon, number, label }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-1 py-8">
-      <span className="font-mono text-3xl font-black text-[#0a1128]">{number}</span>
+    <div className="flex flex-col items-center justify-center gap-2 px-3 py-1 text-center sm:px-4">
+      <Icon size={18} className="text-[#0a1128]/40" />
+      <span className="font-mono text-3xl font-black leading-none text-[#0a1128] sm:text-4xl">{number}</span>
       <span className="text-xs text-slate-500">{label}</span>
     </div>
   )

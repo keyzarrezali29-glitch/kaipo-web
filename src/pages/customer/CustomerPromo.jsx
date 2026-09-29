@@ -60,71 +60,98 @@ export default function CustomerPromo() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
+    <div className="min-h-full">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Promo</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Promo</h1>
         <p className="mt-1 text-sm text-slate-400">Kupon dan diskon yang bisa Anda pakai untuk servis berikutnya</p>
       </header>
 
-      {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>
-      )}
+      {error && <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>}
 
       {promoList.length === 0 ? (
-        <div className="rounded-2xl bg-white p-10 text-center shadow-sm">
-          <Tag size={32} className="mx-auto mb-3 text-slate-300" />
+        <div className="rounded-3xl bg-white p-12 text-center">
+          <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+            <Tag size={24} />
+          </span>
           <p className="text-sm text-slate-400">Belum ada promo aktif saat ini.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {promoList.map((p) => {
-            const hariTersisa = sisaHari(p.berlaku_sampai)
-            const segeraBerakhir = hariTersisa !== null && hariTersisa <= 3
-            return (
-              <div key={p.id} className="overflow-hidden rounded-2xl bg-[#12123a] text-white shadow-sm">
-                <div className="p-5">
-                  <div className="mb-3 flex items-start justify-between gap-2">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-amber-400">
-                      <Tag size={16} />
-                    </span>
-                    {segeraBerakhir && (
-                      <span className="rounded-full bg-rose-500/20 px-2.5 py-1 text-[10px] font-semibold text-rose-300">
-                        Segera Berakhir
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-2xl font-extrabold text-amber-400">{formatDiskon(p)}</p>
-                  <p className="mb-1 text-sm font-semibold text-white">{p.judul}</p>
-                  {p.deskripsi && <p className="mb-3 text-xs text-white/50">{p.deskripsi}</p>}
-
-                  <div className="mb-4 space-y-1 text-xs text-white/50">
-                    {p.min_transaksi > 0 && <p>Min. transaksi {formatRupiah(p.min_transaksi)}</p>}
-                    <p className="flex items-center gap-1.5">
-                      <CalendarClock size={12} />
-                      Berlaku sampai {formatTanggal(p.berlaku_sampai)}
-                      {hariTersisa !== null && hariTersisa >= 0 && ` (${hariTersisa} hari lagi)`}
-                    </p>
-                  </div>
-
-                  {p.kode && (
-                    <button
-                      onClick={() => handleSalinKode(p.kode)}
-                      className="flex w-full items-center justify-between rounded-xl border border-dashed border-white/30 bg-white/5 px-4 py-3 text-left hover:bg-white/10"
-                    >
-                      <span className="font-mono text-sm font-bold tracking-wider text-white">{p.kode}</span>
-                      {kodeTersalin === p.kode ? (
-                        <Check size={16} className="text-emerald-400" />
-                      ) : (
-                        <Copy size={16} className="text-white/50" />
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {promoList.map((p, i) => (
+            <PromoCard
+              key={p.id}
+              promo={p}
+              highlight={i === 0}
+              tersalin={kodeTersalin === p.kode}
+              onSalin={handleSalinKode}
+            />
+          ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+function PromoCard({ promo: p, highlight, tersalin, onSalin }) {
+  const hariTersisa = sisaHari(p.berlaku_sampai)
+  const segeraBerakhir = hariTersisa !== null && hariTersisa <= 3
+
+  return (
+    <div
+      className={`relative flex flex-col overflow-hidden rounded-3xl p-6 ${
+        highlight ? 'bg-gradient-to-br from-[#12123a] via-[#181850] to-[#2b2b7a] text-white' : 'bg-white text-slate-900'
+      }`}
+    >
+      {highlight && (
+        <div className="pointer-events-none absolute -bottom-16 -right-16 h-52 w-52 rounded-full border-[22px] border-white/5" />
+      )}
+
+      <div className="relative mb-5 flex items-start justify-between gap-2">
+        <span
+          className={`flex h-10 w-10 items-center justify-center rounded-full ${
+            highlight ? 'bg-white/10 text-white' : 'bg-slate-100 text-[#12123a]'
+          }`}
+        >
+          <Tag size={17} />
+        </span>
+        {segeraBerakhir && (
+          <span className="rounded-md bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-600 ring-1 ring-inset ring-rose-100">
+            Segera berakhir
+          </span>
+        )}
+      </div>
+
+      <p className="relative text-4xl font-bold tracking-tight">{formatDiskon(p)}</p>
+      <p className={`relative mt-1 text-sm font-semibold ${highlight ? 'text-white' : 'text-slate-800'}`}>{p.judul}</p>
+      {p.deskripsi && (
+        <p className={`relative mt-1 text-xs ${highlight ? 'text-white/60' : 'text-slate-400'}`}>{p.deskripsi}</p>
+      )}
+
+      <div className={`relative mt-4 flex-1 space-y-1.5 text-xs ${highlight ? 'text-white/60' : 'text-slate-400'}`}>
+        {p.min_transaksi > 0 && <p>Min. transaksi {formatRupiah(p.min_transaksi)}</p>}
+        <p className="flex items-center gap-1.5">
+          <CalendarClock size={12} />
+          Berlaku sampai {formatTanggal(p.berlaku_sampai)}
+          {hariTersisa !== null && hariTersisa >= 0 && ` (${hariTersisa} hari lagi)`}
+        </p>
+      </div>
+
+      {p.kode && (
+        <button
+          onClick={() => onSalin(p.kode)}
+          className={`relative mt-5 flex w-full items-center justify-between rounded-full border border-dashed px-5 py-3 text-left transition ${
+            highlight
+              ? 'border-white/30 bg-white/5 hover:bg-white/10'
+              : 'border-slate-300 bg-slate-50 hover:bg-slate-100'
+          }`}
+        >
+          <span className="font-mono text-sm font-bold tracking-wider">{p.kode}</span>
+          {tersalin ? (
+            <Check size={16} className={highlight ? 'text-emerald-300' : 'text-emerald-600'} />
+          ) : (
+            <Copy size={16} className={highlight ? 'text-white/60' : 'text-slate-400'} />
+          )}
+        </button>
       )}
     </div>
   )
