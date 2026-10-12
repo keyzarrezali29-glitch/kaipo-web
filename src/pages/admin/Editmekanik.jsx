@@ -93,23 +93,25 @@ export default function EditMekanik() {
     return <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-400">Memuat data mekanik...</div>
   }
 
+  const inputClass = 'w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#12123a]'
+
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
+    <div className="min-h-full">
       <button
         onClick={() => navigate('/admin/mekanik')}
-        className="mb-4 flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+        className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800"
       >
-        <ArrowLeft size={14} /> Kembali ke Data Mekanik
+        <ArrowLeft size={16} /> Kembali ke Data Mekanik
       </button>
 
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Edit Mekanik</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Edit Mekanik</h1>
         <p className="mt-1 text-sm text-slate-400">Ubah data dan status kerja mekanik</p>
       </header>
 
-      {error && <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>}
+      {error && <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="max-w-xl rounded-2xl bg-white p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="max-w-xl rounded-3xl bg-white p-6">
         <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-slate-600">Nama</label>
@@ -117,7 +119,7 @@ export default function EditMekanik() {
               value={nama}
               onChange={(e) => setNama(e.target.value)}
               required
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-400"
+              className={inputClass}
             />
           </div>
 
@@ -126,7 +128,7 @@ export default function EditMekanik() {
             <input
               value={email}
               disabled
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-400"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-400"
             />
           </div>
 
@@ -136,7 +138,7 @@ export default function EditMekanik() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="0812xxxxxxx"
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-400"
+              className={inputClass}
             />
           </div>
 
@@ -146,7 +148,7 @@ export default function EditMekanik() {
               value={spesialisasi}
               onChange={(e) => setSpesialisasi(e.target.value)}
               placeholder="Mesin, Tune Up, Rem & Kaki-Kaki"
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-400"
+              className={inputClass}
             />
           </div>
 
@@ -158,7 +160,7 @@ export default function EditMekanik() {
                 min={0}
                 value={pengalaman}
                 onChange={(e) => setPengalaman(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-400"
+                className={inputClass}
               />
             </div>
             <div>
@@ -166,7 +168,7 @@ export default function EditMekanik() {
               <select
                 value={statusKerja}
                 onChange={(e) => setStatusKerja(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-400"
+                className={inputClass}
               >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -176,11 +178,11 @@ export default function EditMekanik() {
           </div>
         </div>
 
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-6 flex items-center gap-4">
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-[#0f1b4c] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-full bg-[#12123a] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
           >
             {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
           </button>

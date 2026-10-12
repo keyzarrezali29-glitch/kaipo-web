@@ -7,9 +7,9 @@ const PER_PAGE = 5
 const AKTIF_BOOKING_STATUS = ['menunggu_konfirmasi', 'dijadwalkan', 'diproses']
 
 const STATUS_CLASS = {
-  'Sedang Servis': 'bg-amber-100 text-amber-700',
-  Baik: 'bg-emerald-100 text-emerald-700',
-  'Perlu Perhatian': 'bg-rose-100 text-rose-700',
+  'Sedang Servis': 'bg-amber-50 text-amber-700 ring-amber-100',
+  Baik: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  'Perlu Perhatian': 'bg-rose-50 text-rose-700 ring-rose-100',
 }
 
 const EMPTY_FORM = {
@@ -239,32 +239,32 @@ export default function DataKendaraan() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="min-h-full">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Data Kendaraan</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Data Kendaraan</h1>
           <p className="mt-1 text-sm text-slate-400">Semua kendaraan customer yang terdaftar di sistem</p>
         </div>
         <button
           onClick={openTambah}
-          className="rounded-lg bg-[#12123a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52]"
+          className="rounded-full bg-[#12123a] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1c1c52]"
         >
           + Tambah Kendaraan
         </button>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
+        <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           Gagal memuat sebagian data: {error}
         </div>
       )}
 
       {/* Filter bar */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <select
           value={merekFilter}
           onChange={(e) => setMerekFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Semua Merek</option>
           {merekOptions.map((m) => (
@@ -275,7 +275,7 @@ export default function DataKendaraan() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Semua Status</option>
           <option value="Baik">Baik</option>
@@ -284,19 +284,19 @@ export default function DataKendaraan() {
         </select>
 
         <div className="relative ml-auto">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari plat nomor / pemilik..."
-            className="w-72 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#2e4bd6]"
+            className="w-72 rounded-full bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl bg-white p-2 shadow-sm">
+      <div className="rounded-3xl bg-white p-3">
         {paginated.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-slate-400">Tidak ada kendaraan yang cocok dengan filter ini.</p>
         ) : (
@@ -318,9 +318,9 @@ export default function DataKendaraan() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {k.foto_url ? (
-                          <img src={k.foto_url} alt={k.merek} className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+                          <img src={k.foto_url} alt={k.merek} className="h-9 w-9 shrink-0 rounded-xl object-cover" />
                         ) : (
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-300">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-300">
                             <Car size={16} />
                           </span>
                         )}
@@ -334,7 +334,7 @@ export default function DataKendaraan() {
                     <td className="px-4 py-3 text-slate-700">{k.tahun ?? '-'}</td>
                     <td className="px-4 py-3 text-slate-700">{k.totalServis}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_CLASS[k.statusTampil] || 'bg-slate-100 text-slate-600'}`}>
+                      <span className={`rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${STATUS_CLASS[k.statusTampil] || 'bg-slate-50 text-slate-600 ring-slate-100'}`}>
                         {k.statusTampil}
                       </span>
                     </td>
@@ -342,14 +342,14 @@ export default function DataKendaraan() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => openDetail(k)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                          className="rounded-full p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                           title="Lihat detail"
                         >
                           <Eye size={16} />
                         </button>
                         <button
                           onClick={() => openEdit(k)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                          className="rounded-full p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                           title="Edit"
                         >
                           <Pencil size={16} />
@@ -357,7 +357,7 @@ export default function DataKendaraan() {
                         <button
                           onClick={() => handleDelete(k)}
                           disabled={deletingId === k.id}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-40"
+                          className="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-40"
                           title="Hapus"
                         >
                           <Trash2 size={16} />
@@ -374,7 +374,7 @@ export default function DataKendaraan() {
 
       {/* Pagination */}
       {filtered.length > 0 && (
-        <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
+        <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
           <p>
             Menampilkan {(pageSafe - 1) * PER_PAGE + 1}–{Math.min(pageSafe * PER_PAGE, filtered.length)} dari {filtered.length.toLocaleString('id-ID')} kendaraan
           </p>
@@ -382,7 +382,7 @@ export default function DataKendaraan() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={pageSafe === 1}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+              className="rounded-full bg-white px-3 py-2 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-40"
             >
               ‹
             </button>
@@ -392,8 +392,8 @@ export default function DataKendaraan() {
                 <button
                   key={n}
                   onClick={() => setPage(n)}
-                  className={`h-8 w-8 rounded-lg text-xs font-medium ${
-                    n === pageSafe ? 'bg-[#12123a] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                  className={`h-9 w-9 rounded-full text-xs font-medium ${
+                    n === pageSafe ? 'bg-[#12123a] text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
                   }`}
                 >
                   {n}
@@ -402,7 +402,7 @@ export default function DataKendaraan() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={pageSafe === totalPages}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+              className="rounded-full bg-white px-3 py-2 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-40"
             >
               ›
             </button>
@@ -413,21 +413,24 @@ export default function DataKendaraan() {
       {/* Modal tambah kendaraan */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900">{editingId ? 'Edit Kendaraan' : 'Tambah Kendaraan'}</h3>
-              <button onClick={() => { setShowModal(false); setEditingId(null) }} className="text-slate-400 hover:text-slate-700">
+              <button
+                onClick={() => { setShowModal(false); setEditingId(null) }}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Pemilik (Customer) *</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Pemilik (Customer) *</label>
                 <select
                   value={form.customer_id}
                   onChange={(e) => setForm((f) => ({ ...f, customer_id: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                 >
                   <option value="">Pilih customer...</option>
                   {customerOptions.map((c) => (
@@ -438,22 +441,22 @@ export default function DataKendaraan() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Merek *</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Merek *</label>
                   <input
                     type="text"
                     value={form.merek}
                     onChange={(e) => setForm((f) => ({ ...f, merek: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="Toyota"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Model *</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Model *</label>
                   <input
                     type="text"
                     value={form.model}
                     onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="Avanza"
                   />
                 </div>
@@ -461,22 +464,22 @@ export default function DataKendaraan() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Plat Nomor *</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Plat Nomor *</label>
                   <input
                     type="text"
                     value={form.plat_nomor}
                     onChange={(e) => setForm((f) => ({ ...f, plat_nomor: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm uppercase outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm uppercase outline-none focus:border-[#12123a]"
                     placeholder="B 1234 ABC"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Tahun</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Tahun</label>
                   <input
                     type="number"
                     value={form.tahun}
                     onChange={(e) => setForm((f) => ({ ...f, tahun: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="2021"
                   />
                 </div>
@@ -484,21 +487,21 @@ export default function DataKendaraan() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Warna</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Warna</label>
                   <input
                     type="text"
                     value={form.warna}
                     onChange={(e) => setForm((f) => ({ ...f, warna: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="Hitam"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Transmisi</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Transmisi</label>
                   <select
                     value={form.transmisi}
                     onChange={(e) => setForm((f) => ({ ...f, transmisi: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   >
                     <option value="">Pilih...</option>
                     <option value="Manual">Manual</option>
@@ -508,31 +511,31 @@ export default function DataKendaraan() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Kondisi</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Kondisi</label>
                 <select
                   value={form.kondisi}
                   onChange={(e) => setForm((f) => ({ ...f, kondisi: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                 >
                   <option value="Baik">Baik</option>
                   <option value="Perlu Perhatian">Perlu Perhatian</option>
                 </select>
               </div>
 
-              {formError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{formError}</p>}
+              {formError && <p className="rounded-2xl bg-rose-50 px-4 py-2.5 text-xs text-rose-600">{formError}</p>}
 
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setEditingId(null) }}
-                  className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-lg bg-[#12123a] py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52] disabled:opacity-50"
+                  className="flex-1 rounded-full bg-[#12123a] py-2.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
                 >
                   {saving ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Simpan'}
                 </button>
@@ -545,19 +548,22 @@ export default function DataKendaraan() {
       {/* Modal detail kendaraan */}
       {detailKendaraan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900">Detail Kendaraan</h3>
-              <button onClick={() => setDetailKendaraan(null)} className="text-slate-400 hover:text-slate-700">
+              <button
+                onClick={() => setDetailKendaraan(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="mb-5 flex items-center gap-3 rounded-xl bg-slate-50 p-4">
+            <div className="mb-5 flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
               {detailKendaraan.foto_url ? (
-                <img src={detailKendaraan.foto_url} alt={detailKendaraan.merek} className="h-14 w-14 shrink-0 rounded-lg object-cover" />
+                <img src={detailKendaraan.foto_url} alt={detailKendaraan.merek} className="h-14 w-14 shrink-0 rounded-xl object-cover" />
               ) : (
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-400">
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-400">
                   <Car size={22} />
                 </span>
               )}
@@ -567,7 +573,7 @@ export default function DataKendaraan() {
               </div>
             </div>
 
-            <div className="mb-5 grid grid-cols-2 gap-3 text-sm">
+            <div className="mb-5 grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-xs text-slate-400">Pemilik</p>
                 <p className="font-medium text-slate-800">{detailKendaraan.customer?.full_name ?? '-'}</p>
@@ -582,13 +588,13 @@ export default function DataKendaraan() {
               </div>
               <div>
                 <p className="text-xs text-slate-400">Status</p>
-                <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_CLASS[detailKendaraan.statusTampil] || 'bg-slate-100 text-slate-600'}`}>
+                <span className={`inline-block rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${STATUS_CLASS[detailKendaraan.statusTampil] || 'bg-slate-50 text-slate-600 ring-slate-100'}`}>
                   {detailKendaraan.statusTampil}
                 </span>
               </div>
             </div>
 
-            <h4 className="mb-2 text-sm font-semibold text-slate-900">Riwayat Servis</h4>
+            <h4 className="mb-3 text-sm font-semibold text-slate-900">Riwayat Servis</h4>
             {loadingRiwayat ? (
               <p className="text-sm text-slate-400">Memuat riwayat...</p>
             ) : riwayatServis.length === 0 ? (
@@ -596,14 +602,14 @@ export default function DataKendaraan() {
             ) : (
               <ul className="divide-y divide-slate-50">
                 {riwayatServis.map((r) => (
-                  <li key={r.id} className="py-2.5">
+                  <li key={r.id} className="py-3">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-slate-800">{r.layanan?.nama ?? '-'}</p>
-                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_CLASS[r.status] || 'bg-slate-100 text-slate-600'}`}>
+                      <span className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${STATUS_CLASS[r.status] || 'bg-slate-50 text-slate-600 ring-slate-100'}`}>
                         {r.status}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400">
+                    <p className="mt-0.5 text-xs text-slate-400">
                       #{r.kode_booking} · {r.tanggal} · Mekanik: {r.mekanik?.full_name ?? 'Belum ditugaskan'}
                     </p>
                   </li>

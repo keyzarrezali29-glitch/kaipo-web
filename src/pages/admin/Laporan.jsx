@@ -143,18 +143,19 @@ export default function Laporan() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6 print:bg-white print:px-0">
+    <div className="min-h-full print:bg-white">
       {/* CSS khusus buat export/cetak PDF — sembunyikan sidebar & kontrol filter */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
+          main { margin-left: 0 !important; }
           body { background: white !important; }
         }
       `}</style>
 
-      <header className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
+      <header className="no-print mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Laporan</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Laporan</h1>
           <p className="mt-1 text-sm text-slate-400">Ringkasan performa operasional dan pendapatan Kai-Po</p>
         </div>
         <div className="flex items-center gap-2">
@@ -162,18 +163,18 @@ export default function Laporan() {
             type="date"
             value={dariTanggal}
             onChange={(e) => setDariTanggal(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+            className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
           />
           <span className="text-sm text-slate-400">—</span>
           <input
             type="date"
             value={sampaiTanggal}
             onChange={(e) => setSampaiTanggal(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+            className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
           />
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 rounded-lg bg-[#12123a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52]"
+            className="flex items-center gap-2 rounded-full bg-[#12123a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52]"
           >
             <Download size={15} />
             Export PDF
@@ -188,28 +189,28 @@ export default function Laporan() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
+        <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           Gagal memuat sebagian data: {error}
         </div>
       )}
 
       {/* Ringkasan */}
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
-        <StatCard icon={<Wallet size={16} />} iconBg="bg-emerald-100 text-emerald-600" label="Pendapatan (Berhasil)" value={formatRupiah(ringkasan.pendapatan)} />
-        <StatCard icon={<CheckCircle2 size={16} />} iconBg="bg-blue-100 text-blue-600" label="Booking Selesai" value={ringkasan.selesai} />
-        <StatCard icon={<XCircle size={16} />} iconBg="bg-rose-100 text-rose-600" label="Booking Dibatalkan" value={ringkasan.dibatalkan} />
-        <StatCard icon={<UserPlus size={16} />} iconBg="bg-indigo-100 text-indigo-600" label="Customer Baru" value={ringkasan.customerBaru} />
+      <div className="mb-2 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
+        <StatCard icon={<Wallet size={18} />} label="Pendapatan (Berhasil)" value={formatRupiah(ringkasan.pendapatan)} accent="emerald" />
+        <StatCard icon={<CheckCircle2 size={18} />} label="Booking Selesai" value={ringkasan.selesai} accent="blue" />
+        <StatCard icon={<XCircle size={18} />} label="Booking Dibatalkan" value={ringkasan.dibatalkan} accent="rose" />
+        <StatCard icon={<UserPlus size={18} />} label="Customer Baru" value={ringkasan.customerBaru} />
       </div>
 
-      <p className="mb-2 mt-1 text-xs text-slate-400">
-        * 4 angka di atas dihitung dari rentang tanggal yang dipilih ({dariTanggal} s/d {sampaiTanggal})
+      <p className="mb-5 mt-2 text-xs text-slate-400">
+        Empat angka di atas dihitung dari rentang tanggal yang dipilih ({dariTanggal} s/d {sampaiTanggal})
       </p>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 print:grid-cols-1">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 print:grid-cols-1">
         {/* Tren pendapatan 6 bulan */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm print:break-inside-avoid print:shadow-none print:border print:border-slate-200">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">Tren Pendapatan 6 Bulan Terakhir</h2>
-          <p className="mb-4 text-xs text-slate-400">Dari transaksi berstatus "berhasil" (nggak ikut filter tanggal di atas)</p>
+        <div className="rounded-3xl bg-white p-6 print:break-inside-avoid print:border print:border-slate-200">
+          <h2 className="mb-1 text-[15px] font-semibold text-slate-900">Tren Pendapatan 6 Bulan Terakhir</h2>
+          <p className="mb-5 text-xs text-slate-400">Dari transaksi berstatus "berhasil" (nggak ikut filter tanggal di atas)</p>
           <div className="flex items-end gap-3" style={{ height: 140 }}>
             {trenBulanan.map((m) => (
               <div key={m.label} className="flex flex-1 flex-col items-center justify-end gap-1.5">
@@ -217,7 +218,7 @@ export default function Laporan() {
                   {m.total > 0 ? formatRupiah(m.total).replace('Rp ', '') : ''}
                 </span>
                 <div
-                  className="w-full rounded-t-md bg-[#2e4bd6]"
+                  className="w-full rounded-full bg-[#12123a]"
                   style={{ height: `${Math.max(4, (m.total / maxTren) * 100)}px` }}
                 />
                 <span className="text-[10px] text-slate-400">{m.label}</span>
@@ -227,12 +228,12 @@ export default function Laporan() {
         </div>
 
         {/* Layanan terpopuler */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm print:break-inside-avoid print:shadow-none print:border print:border-slate-200">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Layanan Terpopuler (periode dipilih)</h2>
+        <div className="rounded-3xl bg-white p-6 print:break-inside-avoid print:border print:border-slate-200">
+          <h2 className="mb-5 text-[15px] font-semibold text-slate-900">Layanan Terpopuler (periode dipilih)</h2>
           {topLayanan.length === 0 ? (
             <p className="text-sm text-slate-400">Belum ada booking di periode ini.</p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {topLayanan.map(([nama, jumlah]) => (
                 <li key={nama}>
                   <div className="mb-1.5 flex justify-between text-sm text-slate-700">
@@ -240,7 +241,7 @@ export default function Laporan() {
                     <span className="text-xs text-slate-400">{jumlah}x</span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-violet-500" style={{ width: `${(jumlah / maxLayanan) * 100}%` }} />
+                    <div className="h-full rounded-full bg-[#12123a]" style={{ width: `${(jumlah / maxLayanan) * 100}%` }} />
                   </div>
                 </li>
               ))}
@@ -249,13 +250,13 @@ export default function Laporan() {
         </div>
 
         {/* Performa mekanik */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm print:break-inside-avoid print:shadow-none print:border print:border-slate-200 lg:col-span-2 print:col-span-1">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">Performa Mekanik (periode dipilih)</h2>
-          <p className="mb-4 text-xs text-slate-400">Jumlah booking yang berhasil diselesaikan per mekanik</p>
+        <div className="rounded-3xl bg-white p-6 print:break-inside-avoid print:border print:border-slate-200 lg:col-span-2 print:col-span-1">
+          <h2 className="mb-1 text-[15px] font-semibold text-slate-900">Performa Mekanik (periode dipilih)</h2>
+          <p className="mb-5 text-xs text-slate-400">Jumlah booking yang berhasil diselesaikan per mekanik</p>
           {topMekanik.length === 0 ? (
             <p className="text-sm text-slate-400">Belum ada booking selesai di periode ini.</p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {topMekanik.map(([nama, jumlah]) => (
                 <li key={nama}>
                   <div className="mb-1.5 flex justify-between text-sm text-slate-700">
@@ -275,14 +276,18 @@ export default function Laporan() {
   )
 }
 
-function StatCard({ icon, iconBg, label, value }) {
+function StatCard({ icon, label, value, accent = 'indigo' }) {
+  const accents = {
+    indigo: 'bg-indigo-50 text-indigo-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    blue: 'bg-blue-50 text-blue-600',
+    rose: 'bg-rose-50 text-rose-500',
+  }
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm print:border print:border-slate-200 print:shadow-none">
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>{icon}</span>
-      <div>
-        <p className="text-xs text-slate-400">{label}</p>
-        <p className="text-lg font-bold text-slate-900">{value}</p>
-      </div>
+    <div className="rounded-3xl bg-white p-6 print:border print:border-slate-200">
+      <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</span>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
     </div>
   )
 }

@@ -186,32 +186,32 @@ export default function DataServis() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="min-h-full">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Data Servis</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Data Servis</h1>
           <p className="mt-1 text-sm text-slate-400">Kelola daftar jenis layanan dan harga yang tersedia</p>
         </div>
         <button
           onClick={openTambah}
-          className="rounded-lg bg-[#12123a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52]"
+          className="rounded-full bg-[#12123a] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1c1c52]"
         >
           + Tambah Layanan
         </button>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
+        <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           Gagal memuat sebagian data: {error}
         </div>
       )}
 
       {/* Filter bar */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <select
           value={kategoriFilter}
           onChange={(e) => setKategoriFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Semua Kategori</option>
           {kategoriOptions.map((k) => (
@@ -222,7 +222,7 @@ export default function DataServis() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Semua Status</option>
           <option value="aktif">Aktif</option>
@@ -230,28 +230,28 @@ export default function DataServis() {
         </select>
 
         <div className="relative ml-auto">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama layanan..."
-            className="w-64 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#2e4bd6]"
+            className="w-64 rounded-full bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
           />
         </div>
       </div>
 
       {/* Grid kartu layanan */}
       {filtered.length === 0 ? (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-slate-400 shadow-sm">
+        <p className="rounded-3xl bg-white px-4 py-10 text-center text-sm text-slate-400">
           Tidak ada layanan yang cocok dengan filter ini.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((l) => (
-            <div key={l.id} className="rounded-2xl bg-white p-5 shadow-sm">
-              <div className="mb-3 flex items-start justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            <div key={l.id} className="rounded-3xl bg-white p-6">
+              <div className="mb-4 flex items-start justify-between">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                   <IconFor name={l.icon} />
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -259,8 +259,8 @@ export default function DataServis() {
                     onClick={() => toggleStatus(l)}
                     disabled={togglingId === l.id}
                     title="Klik buat ubah status"
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition disabled:opacity-40 ${
-                      l.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset transition disabled:opacity-40 ${
+                      l.is_active ? 'bg-emerald-50 text-emerald-700 ring-emerald-100 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 ring-slate-200 hover:bg-slate-200'
                     }`}
                   >
                     {l.is_active ? 'Aktif' : 'Nonaktif'}
@@ -269,7 +269,7 @@ export default function DataServis() {
                     onClick={() => handleDelete(l)}
                     disabled={deletingId === l.id}
                     title="Hapus layanan"
-                    className="rounded-lg p-1.5 text-slate-300 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-40"
+                    className="rounded-full p-1.5 text-slate-300 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-40"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -279,22 +279,22 @@ export default function DataServis() {
               <p className="mb-1 font-semibold text-slate-900">{l.nama}</p>
               <p className="mb-4 text-xs text-slate-400">{l.deskripsi || 'Belum ada deskripsi.'}</p>
 
-              <div className="mb-4 flex items-center justify-between border-t border-slate-50 pt-3">
+              <div className="mb-2 flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
                 <span className="text-xs text-slate-400">Harga</span>
                 <span className="font-bold text-slate-900">{formatRupiah(l.harga)}</span>
               </div>
-              <p className="-mt-3 mb-4 text-xs text-slate-400">Estimasi waktu: {l.estimasi_waktu || '-'}</p>
+              <p className="mb-4 text-xs text-slate-400">Estimasi waktu: {l.estimasi_waktu || '-'}</p>
 
               <div className="flex gap-2">
                 <button
                   onClick={() => openEdit(l)}
-                  className="flex-1 rounded-lg border border-slate-200 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  className="flex-1 rounded-full border border-slate-200 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
                 >
                   Edit
                 </button>
                 <Link
                   to={`/admin/servis/${l.id}`}
-                  className="flex-1 rounded-lg bg-[#12123a] py-2 text-center text-xs font-semibold text-white hover:bg-[#1c1c52]"
+                  className="flex-1 rounded-full bg-[#12123a] py-2.5 text-center text-xs font-semibold text-white transition hover:bg-[#1c1c52]"
                 >
                   Detail
                 </Link>
@@ -307,56 +307,59 @@ export default function DataServis() {
       {/* Modal tambah layanan */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900">{editingId ? 'Edit Layanan' : 'Tambah Layanan'}</h3>
-              <button onClick={() => { setShowModal(false); setEditingId(null) }} className="text-slate-400 hover:text-slate-700">
+              <button
+                onClick={() => { setShowModal(false); setEditingId(null) }}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSubmitLayanan} className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Nama Layanan *</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Nama Layanan *</label>
                 <input
                   type="text"
                   value={form.nama}
                   onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   placeholder="Contoh: Servis AC"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Deskripsi</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Deskripsi</label>
                 <textarea
                   value={form.deskripsi}
                   onChange={(e) => setForm((f) => ({ ...f, deskripsi: e.target.value }))}
                   rows={2}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   placeholder="Deskripsi singkat layanan"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Harga (Rp) *</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Harga (Rp) *</label>
                   <input
                     type="number"
                     min="0"
                     value={form.harga}
                     onChange={(e) => setForm((f) => ({ ...f, harga: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="250000"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Kategori</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Kategori</label>
                   <input
                     type="text"
                     value={form.kategori}
                     onChange={(e) => setForm((f) => ({ ...f, kategori: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="Perawatan"
                   />
                 </div>
@@ -364,21 +367,21 @@ export default function DataServis() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Estimasi Waktu</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Estimasi Waktu</label>
                   <input
                     type="text"
                     value={form.estimasi_waktu}
                     onChange={(e) => setForm((f) => ({ ...f, estimasi_waktu: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="1-2 jam"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Ikon</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Ikon</label>
                   <select
                     value={form.icon}
                     onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   >
                     {ICON_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
@@ -387,20 +390,20 @@ export default function DataServis() {
                 </div>
               </div>
 
-              {formError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{formError}</p>}
+              {formError && <p className="rounded-2xl bg-rose-50 px-4 py-2.5 text-xs text-rose-600">{formError}</p>}
 
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setEditingId(null) }}
-                  className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-lg bg-[#12123a] py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52] disabled:opacity-50"
+                  className="flex-1 rounded-full bg-[#12123a] py-2.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
                 >
                   {saving ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Simpan'}
                 </button>

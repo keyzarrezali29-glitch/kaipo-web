@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import Avatar from '../../components/Avatar'
 
 // ------------------------------------------------------------
 // Helpers
@@ -25,11 +26,11 @@ const STATUS_LABEL = {
 }
 
 const STATUS_CLASS = {
-  menunggu_konfirmasi: 'bg-blue-100 text-blue-700',
-  dijadwalkan: 'bg-amber-100 text-amber-700',
-  diproses: 'bg-blue-100 text-blue-700',
-  selesai: 'bg-emerald-100 text-emerald-700',
-  dibatalkan: 'bg-rose-100 text-rose-700',
+  menunggu_konfirmasi: 'bg-blue-50 text-blue-700 ring-blue-100',
+  dijadwalkan: 'bg-amber-50 text-amber-700 ring-amber-100',
+  diproses: 'bg-blue-50 text-blue-700 ring-blue-100',
+  selesai: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  dibatalkan: 'bg-rose-50 text-rose-700 ring-rose-100',
 }
 
 const TABS = [
@@ -41,17 +42,6 @@ const TABS = [
 ]
 
 const PER_PAGE = 7
-
-function inisial(nama) {
-  if (!nama) return '?'
-  return nama.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-}
-
-const AVATAR_COLORS = ['bg-indigo-900', 'bg-violet-600', 'bg-sky-700', 'bg-emerald-700', 'bg-rose-700']
-function avatarColor(seed) {
-  const i = (seed || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  return AVATAR_COLORS[i % AVATAR_COLORS.length]
-}
 
 // ------------------------------------------------------------
 // Component
@@ -81,7 +71,7 @@ export default function BookingServis() {
           .from('booking')
           .select(`
             id, kode_booking, tanggal, waktu, status, mekanik_id,
-            customer:customer_id ( full_name ),
+            customer:customer_id ( full_name, avatar_url ),
             kendaraan:kendaraan_id ( merek, model ),
             layanan:layanan_id ( id, nama ),
             mekanik:mekanik_id ( full_name )
@@ -184,20 +174,20 @@ export default function BookingServis() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="min-h-full">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Booking Servis</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Booking Servis</h1>
           <p className="mt-1 text-sm text-slate-400">Kelola dan konfirmasi booking servis yang masuk dari customer</p>
         </div>
-        <span className="flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+        <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
           Live
         </span>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
+        <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           Gagal memuat sebagian data: {error}
         </div>
       )}
@@ -208,7 +198,7 @@ export default function BookingServis() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
               activeTab === tab.key ? 'bg-[#12123a] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
             }`}
           >
@@ -229,7 +219,7 @@ export default function BookingServis() {
         <select
           value={tanggalFilter}
           onChange={(e) => setTanggalFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Tanggal: Semua</option>
           <option value="hari_ini">Tanggal: Hari Ini</option>
@@ -238,7 +228,7 @@ export default function BookingServis() {
         <select
           value={layananFilter}
           onChange={(e) => setLayananFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Semua Layanan</option>
           {layananList.map((l) => (
@@ -247,19 +237,19 @@ export default function BookingServis() {
         </select>
 
         <div className="relative ml-auto">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari kode booking / customer..."
-            className="w-64 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#2e4bd6]"
+            className="w-64 rounded-full bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl bg-white p-2 shadow-sm">
+      <div className="rounded-3xl bg-white p-3">
         {paginated.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-slate-400">Tidak ada booking yang cocok dengan filter ini.</p>
         ) : (
@@ -280,9 +270,7 @@ export default function BookingServis() {
                   <tr key={b.id} className="border-t border-slate-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${avatarColor(b.customer?.full_name)}`}>
-                          {inisial(b.customer?.full_name)}
-                        </span>
+                        <Avatar nama={b.customer?.full_name} url={b.customer?.avatar_url} className="h-9 w-9 text-xs" />
                         <div>
                           <p className="font-medium text-slate-900">{b.customer?.full_name ?? '-'}</p>
                           <p className="text-xs text-slate-400">
@@ -302,7 +290,7 @@ export default function BookingServis() {
                         <select
                           value={pilihMekanik[b.id] ?? ''}
                           onChange={(e) => setPilihMekanik((prev) => ({ ...prev, [b.id]: e.target.value }))}
-                          className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-xs text-rose-600 outline-none"
+                          className="rounded-full bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 outline-none ring-1 ring-inset ring-rose-100"
                         >
                           <option value="">Belum ditugaskan</option>
                           {mekanikList.map((m) => (
@@ -314,7 +302,7 @@ export default function BookingServis() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_CLASS[b.status] || 'bg-slate-100 text-slate-600'}`}>
+                      <span className={`rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${STATUS_CLASS[b.status] || 'bg-slate-50 text-slate-600 ring-slate-100'}`}>
                         {STATUS_LABEL[b.status] || b.status}
                       </span>
                     </td>
@@ -323,12 +311,12 @@ export default function BookingServis() {
                         <button
                           onClick={() => handleKonfirmasi(b.id)}
                           disabled={!pilihMekanik[b.id] || confirming === b.id}
-                          className="rounded-lg bg-[#12123a] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1c1c52] disabled:opacity-40"
+                          className="rounded-full bg-[#12123a] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-40"
                         >
                           {confirming === b.id ? 'Memproses...' : 'Konfirmasi'}
                         </button>
                       ) : (
-                        <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                        <button className="rounded-full border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">
                           Detail
                         </button>
                       )}
@@ -343,7 +331,7 @@ export default function BookingServis() {
 
       {/* Pagination */}
       {filtered.length > 0 && (
-        <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
+        <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
           <p>
             Menampilkan {(pageSafe - 1) * PER_PAGE + 1}–{Math.min(pageSafe * PER_PAGE, filtered.length)} dari {filtered.length} booking
           </p>
@@ -351,7 +339,7 @@ export default function BookingServis() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={pageSafe === 1}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+              className="rounded-full bg-white px-3 py-2 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-40"
             >
               ‹
             </button>
@@ -359,8 +347,8 @@ export default function BookingServis() {
               <button
                 key={n}
                 onClick={() => setPage(n)}
-                className={`h-8 w-8 rounded-lg text-xs font-medium ${
-                  n === pageSafe ? 'bg-[#12123a] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                className={`h-9 w-9 rounded-full text-xs font-medium ${
+                  n === pageSafe ? 'bg-[#12123a] text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
                 }`}
               >
                 {n}
@@ -369,7 +357,7 @@ export default function BookingServis() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={pageSafe === totalPages}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+              className="rounded-full bg-white px-3 py-2 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-40"
             >
               ›
             </button>

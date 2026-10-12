@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Wrench, CalendarDays, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Tag, X } from 'lucide-react'
+import { Wrench, CalendarDays, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Tag, X, MapPin, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 const HARI = ['S', 'S', 'R', 'K', 'J', 'S', 'M']
@@ -90,6 +90,7 @@ function BuatBookingTab() {
   const [loading, setLoading] = useState(true)
   const [layananList, setLayananList] = useState([])
   const [kendaraanList, setKendaraanList] = useState([])
+  const [bengkel, setBengkel] = useState(null)
 
   const [selectedLayanan, setSelectedLayanan] = useState(null)
   const [selectedKendaraan, setSelectedKendaraan] = useState(null)
@@ -102,24 +103,26 @@ function BuatBookingTab() {
 
   // --- Kode promo ---
   const [promoInput, setPromoInput] = useState('')
-  const [promoApplied, setPromoApplied] = useState(null)
+  const [promoApplied, setPromoApplied] = useState(null) // baris promo yang udah divalidasi & dipakai
   const [checkingPromo, setCheckingPromo] = useState(false)
   const [promoNotice, setPromoNotice] = useState({ type: '', message: '' })
 
   const kalender = generateKalender(bulanOffset)
-  const bisaMundur = bulanOffset > 0
+  const bisaMundur = bulanOffset > 0 // gak bisa balik ke bulan yang udah lewat
 
   useEffect(() => {
     async function load() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        const [layananRes, kendaraanRes] = await Promise.all([
+        const [layananRes, kendaraanRes, bengkelRes] = await Promise.all([
           supabase.from('layanan').select('*').eq('is_active', true).order('nama'),
           supabase.from('kendaraan').select('*').eq('customer_id', user.id).order('is_default', { ascending: false }),
+          supabase.from('pengaturan_bengkel').select('*').maybeSingle(),
         ])
         setLayananList(layananRes.data ?? [])
         setKendaraanList(kendaraanRes.data ?? [])
         if (kendaraanRes.data?.length) setSelectedKendaraan(kendaraanRes.data[0])
+        setBengkel(bengkelRes.data ?? null)
       } catch (err) {
         console.error('Gagal memuat data booking:', err)
       } finally {
@@ -131,7 +134,7 @@ function BuatBookingTab() {
 
   function gantiBulan(arah) {
     setBulanOffset((prev) => Math.max(0, prev + arah))
-    setSelectedTanggal(null)
+    setSelectedTanggal(null) // reset tanggal terpilih pas ganti bulan biar gak nyangkut ke tanggal bulan lain
   }
 
   async function handleCekPromo() {
@@ -426,8 +429,10 @@ function BuatBookingTab() {
         </div>
       </div>
 
-      {/* RINGKASAN */}
-      <div className="lg:sticky lg:top-6 lg:h-fit">
+      {/* RINGKASAN + LOKASI */}
+      <div className="space-y-5 lg:sticky lg:top-6 lg:h-fit">
+        <LokasiCard bengkel={bengkel} />
+
         <div className="rounded-3xl bg-white p-6">
           <h3 className="mb-4 text-[15px] font-semibold text-slate-900">Ringkasan Booking</h3>
 
@@ -532,6 +537,58 @@ function RiwayatBookingTab() {
           </span>
         </Link>
       ))}
+    </div>
+  )
+}
+
+// ============================================================
+// KARTU LOKASI SERVIS — embed Google Maps tanpa API key
+// ============================================================
+function LokasiCard({ bengkel }) {
+  const alamat = bengkel?.alamat?.trim()
+  const namaBengkel = bengkel?.nama_bengkel || 'Kai-Po Elite Garage'
+
+  if (!alamat) {
+    return (
+      <div className="rounded-3xl bg-white p-6">
+        <div className="mb-1 flex items-center gap-2 text-[15px] font-semibold text-slate-900">
+          <MapPin size={16} className="text-[#12123a]" /> Lokasi Servis
+        </div>
+        <p className="mt-2 text-sm text-slate-400">Alamat bengkel belum diatur oleh admin.</p>
+      </div>
+    )
+  }
+
+  const query = encodeURIComponent(alamat)
+  const embedUrl = `https://maps.google.com/maps?q=${query}&z=15&output=embed`
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${query}`
+
+  return (
+    <div className="overflow-hidden rounded-3xl bg-white">
+      <div className="relative h-40 w-full">
+        <iframe
+          title="Lokasi bengkel"
+          src={embedUrl}
+          className="h-full w-full border-0"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </div>
+      <div className="p-5">
+        <p className="text-[15px] font-semibold text-slate-900">{namaBengkel}</p>
+        <p className="mt-1 flex items-start gap-1.5 text-xs text-slate-400">
+          <MapPin size={13} className="mt-0.5 shrink-0" />
+          {alamat}
+        </p>
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 flex items-center justify-center gap-2 rounded-full border border-[#12123a] py-2.5 text-xs font-semibold text-[#12123a] transition hover:bg-slate-50"
+        >
+          Buka di Google Maps <ExternalLink size={13} />
+        </a>
+      </div>
     </div>
   )
 }

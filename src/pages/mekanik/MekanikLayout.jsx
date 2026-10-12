@@ -10,6 +10,7 @@ import {
 import { supabase } from '../../lib/supabase'
 import logoKaipo from '../../assets/logo-kai-po.png'
 import Avatar from '../../components/Avatar'
+import NotifikasiBell from '../../components/NotifikasiBell'
 
 const NAV_ITEMS = [
   { to: '/mekanik/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -99,7 +100,8 @@ export default function MekanikLayout() {
 
       {/* Konten */}
       <main className="ml-[17.5rem] min-h-screen">
-        <div className="no-print flex justify-end px-8 pt-6">
+        <div className="no-print flex items-center justify-end gap-3 px-8 pt-6">
+          <NotifikasiBell />
           <div className="flex items-center gap-3 rounded-full bg-white py-1.5 pl-1.5 pr-5">
             <Avatar nama={profil?.full_name} url={profil?.avatar_url} className="h-10 w-10 text-sm" />
             <div className="leading-tight">

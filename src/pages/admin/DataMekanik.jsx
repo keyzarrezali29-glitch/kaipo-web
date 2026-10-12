@@ -2,21 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, ClipboardCheck, CheckCircle2, Clock, CalendarOff, X, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import Avatar from '../../components/Avatar'
 
 // ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
-function inisial(nama) {
-  if (!nama) return '?'
-  return nama.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-}
-
-const AVATAR_COLORS = ['bg-indigo-900', 'bg-violet-600', 'bg-sky-700', 'bg-emerald-700', 'bg-rose-700']
-function avatarColor(seed) {
-  const i = (seed || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  return AVATAR_COLORS[i % AVATAR_COLORS.length]
-}
-
 // Level teknisi diturunkan dari pengalaman_tahun (bukan field terpisah di DB)
 function levelTeknisi(tahun) {
   if (tahun >= 5) return 'Teknisi Senior'
@@ -26,9 +16,9 @@ function levelTeknisi(tahun) {
 
 const STATUS_LABEL = { tersedia: 'Tersedia', bertugas: 'Bertugas', libur: 'Libur' }
 const STATUS_CLASS = {
-  tersedia: 'bg-emerald-100 text-emerald-700',
-  bertugas: 'bg-blue-100 text-blue-700',
-  libur: 'bg-slate-100 text-slate-500',
+  tersedia: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  bertugas: 'bg-blue-50 text-blue-700 ring-blue-100',
+  libur: 'bg-slate-100 text-slate-500 ring-slate-200',
 }
 
 function getMonthRangeISO() {
@@ -72,7 +62,7 @@ export default function DataMekanik() {
           .from('mekanik_detail')
           .select(`
             id, profile_id, spesialisasi, pengalaman_tahun, rating, status_kerja,
-            profile:profile_id ( full_name, email, phone )
+            profile:profile_id ( full_name, email, phone, avatar_url )
           `),
         supabase.from('booking').select('mekanik_id, status, tanggal').gte('tanggal', monthStart).lt('tanggal', monthEnd),
       ])
@@ -177,91 +167,89 @@ export default function DataMekanik() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="min-h-full">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Data Mekanik</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Data Mekanik</h1>
           <p className="mt-1 text-sm text-slate-400">Kelola mekanik yang bertugas di Kai-Po</p>
         </div>
         <button
           onClick={bukaModal}
-          className="rounded-lg bg-[#12123a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52]"
+          className="rounded-full bg-[#12123a] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1c1c52]"
         >
           + Tambah Mekanik
         </button>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
+        <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           Gagal memuat sebagian data: {error}
         </div>
       )}
 
       {/* Stat cards */}
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<ClipboardCheck size={16} />} iconBg="bg-slate-100 text-slate-600" label="Total Mekanik" value={stats.total} />
-        <StatCard icon={<CheckCircle2 size={16} />} iconBg="bg-emerald-100 text-emerald-600" label="Tersedia" value={stats.tersedia} />
-        <StatCard icon={<Clock size={16} />} iconBg="bg-blue-100 text-blue-600" label="Sedang Bertugas" value={stats.bertugas} />
-        <StatCard icon={<CalendarOff size={16} />} iconBg="bg-slate-100 text-slate-500" label="Libur Hari Ini" value={stats.libur} />
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={<ClipboardCheck size={18} />} label="Total Mekanik" value={stats.total} />
+        <StatCard icon={<CheckCircle2 size={18} />} label="Tersedia" value={stats.tersedia} accent="emerald" />
+        <StatCard icon={<Clock size={18} />} label="Sedang Bertugas" value={stats.bertugas} accent="blue" />
+        <StatCard icon={<CalendarOff size={18} />} label="Libur Hari Ini" value={stats.libur} />
       </div>
 
       {/* Search */}
-      <div className="relative mb-4 max-w-xs">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="relative mb-5 max-w-xs">
+        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama mekanik..."
-          className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#2e4bd6]"
+          className="w-full rounded-full bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         />
       </div>
 
       {/* Grid kartu mekanik */}
       {filtered.length === 0 ? (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-slate-400 shadow-sm">
+        <p className="rounded-3xl bg-white px-4 py-10 text-center text-sm text-slate-400">
           Tidak ada mekanik yang cocok dengan pencarian ini.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((m) => (
-            <div key={m.id} className="rounded-2xl bg-white p-5 shadow-sm">
-              <div className="mb-3 flex items-start justify-between">
+            <div key={m.id} className="rounded-3xl bg-white p-6">
+              <div className="mb-4 flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white ${avatarColor(m.profile?.full_name)}`}>
-                    {inisial(m.profile?.full_name)}
-                  </span>
+                  <Avatar nama={m.profile?.full_name} url={m.profile?.avatar_url} className="h-12 w-12 text-sm" />
                   <div>
                     <p className="font-semibold text-slate-900">{m.profile?.full_name ?? '-'}</p>
                     <p className="text-xs text-slate-400">{levelTeknisi(m.pengalaman_tahun ?? 0)}</p>
                   </div>
                 </div>
-                <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_CLASS[m.status_kerja] || 'bg-slate-100 text-slate-500'}`}>
+                <span className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${STATUS_CLASS[m.status_kerja] || 'bg-slate-100 text-slate-500 ring-slate-200'}`}>
                   {STATUS_LABEL[m.status_kerja] || m.status_kerja}
                 </span>
               </div>
 
-              <div className="mb-3 grid grid-cols-3 gap-2 border-y border-slate-50 py-3 text-center">
+              <div className="mb-4 grid grid-cols-3 gap-2 rounded-2xl bg-slate-50 py-4 text-center">
                 <div>
                   <p className="text-[10px] uppercase tracking-wide text-slate-400">Pengalaman</p>
-                  <p className="text-sm font-semibold text-slate-800">{m.pengalaman_tahun ?? 0} tahun</p>
+                  <p className="mt-0.5 text-sm font-semibold text-slate-800">{m.pengalaman_tahun ?? 0} thn</p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Selesai Bulan Ini</p>
-                  <p className="text-sm font-semibold text-slate-800">{m.selesaiBulanIni}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Bulan Ini</p>
+                  <p className="mt-0.5 text-sm font-semibold text-slate-800">{m.selesaiBulanIni}</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-wide text-slate-400">Rating</p>
-                  <p className="text-sm font-semibold text-slate-800">{Number(m.rating ?? 0).toFixed(1)}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-slate-800">{Number(m.rating ?? 0).toFixed(1)}</p>
                 </div>
               </div>
 
-              <div className="mb-4 flex flex-wrap gap-1.5">
+              <div className="mb-5 flex flex-wrap gap-1.5">
                 {(m.spesialisasi ?? []).length === 0 ? (
                   <span className="text-xs text-slate-300">Belum ada spesialisasi</span>
                 ) : (
                   m.spesialisasi.map((s) => (
-                    <span key={s} className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-medium text-indigo-600">
+                    <span key={s} className="rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-medium text-indigo-600">
                       {s}
                     </span>
                   ))
@@ -271,13 +259,13 @@ export default function DataMekanik() {
               <div className="flex gap-2">
                 <Link
                   to={`/admin/mekanik/${m.profile_id}/edit`}
-                  className="flex-1 rounded-lg border border-slate-200 py-2 text-center text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  className="flex-1 rounded-full border border-slate-200 py-2.5 text-center text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
                 >
                   Edit
                 </Link>
                 <Link
                   to={`/admin/mekanik/${m.profile_id}`}
-                  className="flex-1 rounded-lg bg-[#12123a] py-2 text-center text-xs font-semibold text-white hover:bg-[#1c1c52]"
+                  className="flex-1 rounded-full bg-[#12123a] py-2.5 text-center text-xs font-semibold text-white transition hover:bg-[#1c1c52]"
                 >
                   Lihat Profil
                 </Link>
@@ -290,16 +278,19 @@ export default function DataMekanik() {
       {/* Modal Tambah Mekanik */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900">Tambah Mekanik</h2>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-700">
-                <X size={20} />
+              <button
+                onClick={() => setModalOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X size={18} />
               </button>
             </div>
 
             {notice.message && (
-              <div className="mb-4 flex items-start gap-2 rounded-lg bg-rose-50 p-3 text-xs font-medium text-rose-600">
+              <div className="mb-4 flex items-start gap-2 rounded-2xl bg-rose-50 p-3 text-xs font-medium text-rose-600">
                 <AlertCircle size={14} className="mt-0.5 shrink-0" /> {notice.message}
               </div>
             )}
@@ -318,20 +309,20 @@ export default function DataMekanik() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-500">Pengalaman (tahun)</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-500">Pengalaman (tahun)</label>
                   <input
                     type="number"
                     value={form.pengalaman_tahun}
                     onChange={(e) => setForm({ ...form, pengalaman_tahun: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-500">Status Kerja</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-500">Status Kerja</label>
                   <select
                     value={form.status_kerja}
                     onChange={(e) => setForm({ ...form, status_kerja: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   >
                     <option value="tersedia">Tersedia</option>
                     <option value="bertugas">Bertugas</option>
@@ -344,7 +335,7 @@ export default function DataMekanik() {
             <button
               onClick={handleTambahMekanik}
               disabled={submitting}
-              className="mt-5 w-full rounded-xl bg-[#12123a] py-3 text-sm font-semibold text-white hover:bg-[#1c1c52] disabled:opacity-50"
+              className="mt-6 w-full rounded-full bg-[#12123a] py-3.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
             >
               {submitting ? 'Menyimpan...' : 'Tambah Mekanik'}
             </button>
@@ -355,14 +346,17 @@ export default function DataMekanik() {
   )
 }
 
-function StatCard({ icon, iconBg, label, value }) {
+function StatCard({ icon, label, value, accent = 'indigo' }) {
+  const accents = {
+    indigo: 'bg-indigo-50 text-indigo-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    blue: 'bg-blue-50 text-blue-600',
+  }
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>{icon}</span>
-      <div>
-        <p className="text-xs text-slate-400">{label}</p>
-        <p className="text-lg font-bold text-slate-900">{value}</p>
-      </div>
+    <div className="rounded-3xl bg-white p-6">
+      <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</span>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
     </div>
   )
 }
@@ -370,13 +364,13 @@ function StatCard({ icon, iconBg, label, value }) {
 function FieldFull({ label, value, onChange, placeholder, type = 'text' }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold text-slate-500">{label}</label>
+      <label className="mb-1.5 block text-xs font-semibold text-slate-500">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
       />
     </div>
   )

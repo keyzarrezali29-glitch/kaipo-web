@@ -181,32 +181,32 @@ export default function AdminPromo() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="min-h-full">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Promo</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Promo</h1>
           <p className="mt-1 text-sm text-slate-400">Kelola kupon dan diskon untuk customer Kai-Po</p>
         </div>
         <button
           onClick={openTambah}
-          className="rounded-lg bg-[#12123a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52]"
+          className="rounded-full bg-[#12123a] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1c1c52]"
         >
           + Tambah Promo
         </button>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
+        <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           Gagal memuat sebagian data: {error}
         </div>
       )}
 
       {/* Filter bar */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Semua Status</option>
           <option value="aktif">Aktif</option>
@@ -214,39 +214,39 @@ export default function AdminPromo() {
         </select>
 
         <div className="relative ml-auto">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari judul atau kode promo..."
-            className="w-64 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#2e4bd6]"
+            className="w-64 rounded-full bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
           />
         </div>
       </div>
 
       {/* Grid kartu promo */}
       {filtered.length === 0 ? (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-slate-400 shadow-sm">
+        <p className="rounded-3xl bg-white px-4 py-10 text-center text-sm text-slate-400">
           Tidak ada promo yang cocok dengan filter ini.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => {
             const expired = sudahBerakhir(p.berlaku_sampai)
             return (
-              <div key={p.id} className="rounded-2xl bg-white p-5 shadow-sm">
-                <div className="mb-3 flex items-start justify-between">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                    <Tag size={16} />
+              <div key={p.id} className="rounded-3xl bg-white p-6">
+                <div className="mb-4 flex items-start justify-between">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                    <Tag size={18} />
                   </span>
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => toggleStatus(p)}
                       disabled={togglingId === p.id}
                       title="Klik buat ubah status"
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition disabled:opacity-40 ${
-                        p.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                      className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset transition disabled:opacity-40 ${
+                        p.is_active ? 'bg-emerald-50 text-emerald-700 ring-emerald-100 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 ring-slate-200 hover:bg-slate-200'
                       }`}
                     >
                       {p.is_active ? 'Aktif' : 'Nonaktif'}
@@ -255,31 +255,31 @@ export default function AdminPromo() {
                       onClick={() => handleDelete(p)}
                       disabled={deletingId === p.id}
                       title="Hapus promo"
-                      className="rounded-lg p-1.5 text-slate-300 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-40"
+                      className="rounded-full p-1.5 text-slate-300 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-40"
                     >
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
 
-                <p className="text-xl font-extrabold text-indigo-600">{formatDiskon(p)}</p>
+                <p className="text-xl font-extrabold text-[#12123a]">{formatDiskon(p)}</p>
                 <p className="mb-1 text-sm font-semibold text-slate-900">{p.judul}</p>
-                <p className="mb-3 text-xs text-slate-400">{p.deskripsi || 'Belum ada deskripsi.'}</p>
+                <p className="mb-4 text-xs text-slate-400">{p.deskripsi || 'Belum ada deskripsi.'}</p>
 
-                <div className="mb-3 flex items-center justify-between border-t border-slate-50 pt-3 text-xs">
+                <div className="mb-3 flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-xs">
                   <span className="text-slate-400">Kode</span>
-                  <span className="rounded bg-slate-100 px-2 py-0.5 font-mono font-bold text-slate-700">{p.kode}</span>
+                  <span className="rounded-md bg-white px-2.5 py-1 font-mono font-bold text-slate-700 ring-1 ring-slate-200">{p.kode}</span>
                 </div>
                 {p.min_transaksi > 0 && (
                   <p className="mb-1 text-xs text-slate-400">Min. transaksi {formatRupiah(p.min_transaksi)}</p>
                 )}
-                <p className={`mb-4 text-xs ${expired ? 'font-semibold text-rose-500' : 'text-slate-400'}`}>
+                <p className={`mb-5 text-xs ${expired ? 'font-semibold text-rose-500' : 'text-slate-400'}`}>
                   {expired ? 'Sudah berakhir' : 'Berlaku sampai'} {formatTanggal(p.berlaku_sampai)}
                 </p>
 
                 <button
                   onClick={() => openEdit(p)}
-                  className="w-full rounded-lg border border-slate-200 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  className="w-full rounded-full border border-slate-200 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
                 >
                   Edit
                 </button>
@@ -292,10 +292,13 @@ export default function AdminPromo() {
       {/* Modal tambah/edit promo */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900">{editingId ? 'Edit Promo' : 'Tambah Promo'}</h3>
-              <button onClick={() => { setShowModal(false); setEditingId(null) }} className="text-slate-400 hover:text-slate-700">
+              <button
+                onClick={() => { setShowModal(false); setEditingId(null) }}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -303,21 +306,21 @@ export default function AdminPromo() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Kode Promo *</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Kode Promo *</label>
                   <input
                     type="text"
                     value={form.kode}
                     onChange={(e) => setForm((f) => ({ ...f, kode: e.target.value.toUpperCase() }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-mono outline-none focus:border-[#12123a]"
                     placeholder="KAIPO10"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Tipe Diskon</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Tipe Diskon</label>
                   <select
                     value={form.tipe_diskon}
                     onChange={(e) => setForm((f) => ({ ...f, tipe_diskon: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   >
                     <option value="persen">Persen (%)</option>
                     <option value="nominal">Nominal (Rp)</option>
@@ -326,30 +329,30 @@ export default function AdminPromo() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Judul Promo *</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Judul Promo *</label>
                 <input
                   type="text"
                   value={form.judul}
                   onChange={(e) => setForm((f) => ({ ...f, judul: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   placeholder="Diskon Spesial"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Deskripsi</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Deskripsi</label>
                 <textarea
                   value={form.deskripsi}
                   onChange={(e) => setForm((f) => ({ ...f, deskripsi: e.target.value }))}
                   rows={2}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   placeholder="Diskon untuk semua jenis servis"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">
                     Nilai {form.tipe_diskon === 'persen' ? '(%)' : '(Rp)'} *
                   </label>
                   <input
@@ -357,18 +360,18 @@ export default function AdminPromo() {
                     min="0"
                     value={form.nilai}
                     onChange={(e) => setForm((f) => ({ ...f, nilai: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder={form.tipe_diskon === 'persen' ? '10' : '50000'}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Min. Transaksi (Rp)</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Min. Transaksi (Rp)</label>
                   <input
                     type="number"
                     min="0"
                     value={form.min_transaksi}
                     onChange={(e) => setForm((f) => ({ ...f, min_transaksi: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="100000"
                   />
                 </div>
@@ -376,39 +379,39 @@ export default function AdminPromo() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Berlaku Dari</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Berlaku Dari</label>
                   <input
                     type="date"
                     value={form.berlaku_dari}
                     onChange={(e) => setForm((f) => ({ ...f, berlaku_dari: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Berlaku Sampai *</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Berlaku Sampai *</label>
                   <input
                     type="date"
                     value={form.berlaku_sampai}
                     onChange={(e) => setForm((f) => ({ ...f, berlaku_sampai: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   />
                 </div>
               </div>
 
-              {formError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{formError}</p>}
+              {formError && <p className="rounded-2xl bg-rose-50 px-4 py-2.5 text-xs text-rose-600">{formError}</p>}
 
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setEditingId(null) }}
-                  className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-lg bg-[#12123a] py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52] disabled:opacity-50"
+                  className="flex-1 rounded-full bg-[#12123a] py-2.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
                 >
                   {saving ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Simpan'}
                 </button>

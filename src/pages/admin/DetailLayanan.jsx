@@ -38,11 +38,11 @@ const STATUS_LABEL = {
   dibatalkan: 'Dibatalkan',
 }
 const STATUS_CLASS = {
-  menunggu_konfirmasi: 'bg-amber-100 text-amber-700',
-  dijadwalkan: 'bg-amber-100 text-amber-700',
-  diproses: 'bg-blue-100 text-blue-700',
-  selesai: 'bg-emerald-100 text-emerald-700',
-  dibatalkan: 'bg-rose-100 text-rose-700',
+  menunggu_konfirmasi: 'bg-amber-50 text-amber-700 ring-amber-100',
+  dijadwalkan: 'bg-amber-50 text-amber-700 ring-amber-100',
+  diproses: 'bg-blue-50 text-blue-700 ring-blue-100',
+  selesai: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  dibatalkan: 'bg-rose-50 text-rose-700 ring-rose-100',
 }
 
 export default function DetailLayanan() {
@@ -111,11 +111,11 @@ export default function DetailLayanan() {
 
   if (error || !layanan) {
     return (
-      <div className="min-h-full bg-slate-100 px-8 py-6">
+      <div className="min-h-full">
         <Link to="/admin/servis" className="mb-4 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
           <ArrowLeft size={16} /> Kembali
         </Link>
-        <div className="rounded-2xl bg-white p-10 text-center text-sm text-rose-500 shadow-sm">
+        <div className="rounded-3xl bg-white p-10 text-center text-sm text-rose-500">
           {error ?? 'Layanan tidak ditemukan.'}
         </div>
       </div>
@@ -123,27 +123,27 @@ export default function DetailLayanan() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
+    <div className="min-h-full">
       <Link to="/admin/servis" className="mb-4 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
         <ArrowLeft size={16} /> Kembali ke Data Servis
       </Link>
 
       {/* Header */}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4 rounded-2xl bg-white p-5 shadow-sm">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4 rounded-3xl bg-white p-6">
         <div className="flex items-start gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
             <IconFor name={layanan.icon} size={24} />
           </span>
           <div>
             <div className="mb-1 flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900">{layanan.nama}</h1>
-              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${layanan.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+              <span className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${layanan.is_active ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-slate-100 text-slate-500 ring-slate-200'}`}>
                 {layanan.is_active ? 'Aktif' : 'Nonaktif'}
               </span>
             </div>
             <p className="mb-2 text-sm text-slate-400">{layanan.deskripsi || 'Belum ada deskripsi.'}</p>
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-              {layanan.kategori && <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium">{layanan.kategori}</span>}
+              {layanan.kategori && <span className="rounded-full bg-slate-100 px-3 py-1 font-medium">{layanan.kategori}</span>}
               <span>Estimasi: {layanan.estimasi_waktu || '-'}</span>
             </div>
           </div>
@@ -155,16 +155,16 @@ export default function DetailLayanan() {
       </div>
 
       {/* Stat cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<ClipboardList size={16} />} iconBg="bg-slate-100 text-slate-600" label="Total Booking" value={stats.total} />
-        <StatCard icon={<CheckCircle2 size={16} />} iconBg="bg-emerald-100 text-emerald-600" label="Booking Selesai" value={stats.selesai} />
-        <StatCard icon={<Clock size={16} />} iconBg="bg-rose-100 text-rose-500" label="Dibatalkan" value={stats.dibatalkan} />
-        <StatCard icon={<TrendingUp size={16} />} iconBg="bg-indigo-100 text-indigo-600" label="Total Pendapatan" value={formatRupiah(pendapatan)} isText />
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={<ClipboardList size={18} />} label="Total Booking" value={stats.total} />
+        <StatCard icon={<CheckCircle2 size={18} />} label="Booking Selesai" value={stats.selesai} accent="emerald" />
+        <StatCard icon={<Clock size={18} />} label="Dibatalkan" value={stats.dibatalkan} accent="rose" />
+        <StatCard icon={<TrendingUp size={18} />} label="Total Pendapatan" value={formatRupiah(pendapatan)} isText />
       </div>
 
       {/* Daftar booking */}
-      <div className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Riwayat Booking untuk Layanan Ini</h2>
+      <div className="rounded-3xl bg-white p-6">
+        <h2 className="mb-4 text-[15px] font-semibold text-slate-900">Riwayat Booking untuk Layanan Ini</h2>
         {bookingList.length === 0 ? (
           <p className="py-6 text-center text-sm text-slate-400">Belum ada booking yang menggunakan layanan ini.</p>
         ) : (
@@ -179,7 +179,7 @@ export default function DetailLayanan() {
                   <span className="text-sm font-semibold text-slate-700">
                     {formatRupiah(b.biaya_final ?? b.biaya_estimasi)}
                   </span>
-                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_CLASS[b.status]}`}>
+                  <span className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${STATUS_CLASS[b.status]}`}>
                     {STATUS_LABEL[b.status] ?? b.status}
                   </span>
                 </div>
@@ -192,14 +192,17 @@ export default function DetailLayanan() {
   )
 }
 
-function StatCard({ icon, iconBg, label, value, isText }) {
+function StatCard({ icon, label, value, isText, accent = 'indigo' }) {
+  const accents = {
+    indigo: 'bg-indigo-50 text-indigo-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    rose: 'bg-rose-50 text-rose-500',
+  }
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>{icon}</span>
-      <div>
-        <p className="text-xs text-slate-400">{label}</p>
-        <p className={`font-bold text-slate-900 ${isText ? 'text-base' : 'text-lg'}`}>{value}</p>
-      </div>
+    <div className="rounded-3xl bg-white p-6">
+      <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</span>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className={`mt-1 font-bold text-slate-900 ${isText ? 'text-lg' : 'text-2xl'}`}>{value}</p>
     </div>
   )
 }

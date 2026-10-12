@@ -218,40 +218,40 @@ export default function ProdukSparepart() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="min-h-full">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Produk & Sparepart</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Produk & Sparepart</h1>
           <p className="mt-1 text-sm text-slate-400">Kelola stok produk dan sparepart yang dijual di Kai-Po</p>
         </div>
         <button
           onClick={openTambah}
-          className="rounded-lg bg-[#12123a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52]"
+          className="rounded-full bg-[#12123a] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1c1c52]"
         >
           + Tambah Produk
         </button>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
+        <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           Gagal memuat sebagian data: {error}
         </div>
       )}
 
       {/* Stat cards */}
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<Package size={16} />} iconBg="bg-indigo-100 text-indigo-600" label="Total Produk" value={stats.total} />
-        <StatCard icon={<AlertTriangle size={16} />} iconBg="bg-rose-100 text-rose-600" label={`Stok Menipis (≤${STOK_MENIPIS_THRESHOLD})`} value={stats.stokMenipis} />
-        <StatCard icon={<Boxes size={16} />} iconBg="bg-slate-100 text-slate-500" label="Nonaktif" value={stats.nonaktif} />
-        <StatCard icon={<Wallet size={16} />} iconBg="bg-emerald-100 text-emerald-600" label="Nilai Inventori" value={formatRupiah(stats.nilaiInventori)} />
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={<Package size={18} />} label="Total Produk" value={stats.total} />
+        <StatCard icon={<AlertTriangle size={18} />} label={`Stok Menipis (≤${STOK_MENIPIS_THRESHOLD})`} value={stats.stokMenipis} accent="rose" />
+        <StatCard icon={<Boxes size={18} />} label="Nonaktif" value={stats.nonaktif} />
+        <StatCard icon={<Wallet size={18} />} label="Nilai Inventori" value={formatRupiah(stats.nilaiInventori)} accent="emerald" isText />
       </div>
 
       {/* Filter bar */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <select
           value={kategoriFilter}
           onChange={(e) => setKategoriFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Semua Kategori</option>
           {kategoriOptions.map((k) => (
@@ -262,7 +262,7 @@ export default function ProdukSparepart() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Semua Status</option>
           <option value="aktif">Aktif</option>
@@ -271,19 +271,19 @@ export default function ProdukSparepart() {
         </select>
 
         <div className="relative ml-auto">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama produk..."
-            className="w-64 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#2e4bd6]"
+            className="w-64 rounded-full bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl bg-white p-2 shadow-sm">
+      <div className="rounded-3xl bg-white p-3">
         {paginated.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-slate-400">Tidak ada produk yang cocok dengan filter ini.</p>
         ) : (
@@ -305,9 +305,9 @@ export default function ProdukSparepart() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {p.foto_url ? (
-                          <img src={p.foto_url} alt={p.nama} className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+                          <img src={p.foto_url} alt={p.nama} className="h-9 w-9 shrink-0 rounded-xl object-cover" />
                         ) : (
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-300">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-300">
                             <Package size={16} />
                           </span>
                         )}
@@ -329,8 +329,8 @@ export default function ProdukSparepart() {
                         onClick={() => toggleStatus(p)}
                         disabled={togglingId === p.id}
                         title="Klik buat ubah status"
-                        className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-40 ${
-                          p.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        className={`rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset transition disabled:opacity-40 ${
+                          p.is_active ? 'bg-emerald-50 text-emerald-700 ring-emerald-100 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 ring-slate-200 hover:bg-slate-200'
                         }`}
                       >
                         {p.is_active ? 'Aktif' : 'Nonaktif'}
@@ -340,7 +340,7 @@ export default function ProdukSparepart() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => openEdit(p)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                          className="rounded-full p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                           title="Edit"
                         >
                           <Pencil size={16} />
@@ -348,7 +348,7 @@ export default function ProdukSparepart() {
                         <button
                           onClick={() => handleDelete(p)}
                           disabled={deletingId === p.id}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-40"
+                          className="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-40"
                           title="Hapus"
                         >
                           <Trash2 size={16} />
@@ -365,7 +365,7 @@ export default function ProdukSparepart() {
 
       {/* Pagination */}
       {filtered.length > 0 && (
-        <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
+        <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
           <p>
             Menampilkan {(pageSafe - 1) * PER_PAGE + 1}–{Math.min(pageSafe * PER_PAGE, filtered.length)} dari {filtered.length.toLocaleString('id-ID')} produk
           </p>
@@ -373,7 +373,7 @@ export default function ProdukSparepart() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={pageSafe === 1}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+              className="rounded-full bg-white px-3 py-2 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-40"
             >
               ‹
             </button>
@@ -383,8 +383,8 @@ export default function ProdukSparepart() {
                 <button
                   key={n}
                   onClick={() => setPage(n)}
-                  className={`h-8 w-8 rounded-lg text-xs font-medium ${
-                    n === pageSafe ? 'bg-[#12123a] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                  className={`h-9 w-9 rounded-full text-xs font-medium ${
+                    n === pageSafe ? 'bg-[#12123a] text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
                   }`}
                 >
                   {n}
@@ -393,7 +393,7 @@ export default function ProdukSparepart() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={pageSafe === totalPages}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+              className="rounded-full bg-white px-3 py-2 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-40"
             >
               ›
             </button>
@@ -404,83 +404,86 @@ export default function ProdukSparepart() {
       {/* Modal tambah/edit produk */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900">{editingId ? 'Edit Produk' : 'Tambah Produk'}</h3>
-              <button onClick={() => { setShowModal(false); setEditingId(null) }} className="text-slate-400 hover:text-slate-700">
+              <button
+                onClick={() => { setShowModal(false); setEditingId(null) }}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Nama Produk *</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Nama Produk *</label>
                 <input
                   type="text"
                   value={form.nama}
                   onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   placeholder="Contoh: Oli Mesin 10W-40"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Deskripsi</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Deskripsi</label>
                 <textarea
                   value={form.deskripsi}
                   onChange={(e) => setForm((f) => ({ ...f, deskripsi: e.target.value }))}
                   rows={2}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   placeholder="Deskripsi singkat produk"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Harga (Rp) *</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Harga (Rp) *</label>
                   <input
                     type="number"
                     min="0"
                     value={form.harga}
                     onChange={(e) => setForm((f) => ({ ...f, harga: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="85000"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">Stok *</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-600">Stok *</label>
                   <input
                     type="number"
                     min="0"
                     value={form.stok}
                     onChange={(e) => setForm((f) => ({ ...f, stok: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                     placeholder="20"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Kategori</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Kategori</label>
                 <input
                   type="text"
                   value={form.kategori}
                   onChange={(e) => setForm((f) => ({ ...f, kategori: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2e4bd6]"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
                   placeholder="Sparepart / Aksesoris"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-600">Foto Produk</label>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Foto Produk</label>
                 <label
                   htmlFor="foto-produk-input"
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500 hover:border-[#2e4bd6] hover:bg-slate-50"
+                  className="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 hover:border-[#12123a] hover:bg-slate-50"
                 >
                   {fotoPreview ? (
-                    <img src={fotoPreview} alt="Preview" className="h-12 w-12 rounded-lg object-cover" />
+                    <img src={fotoPreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover" />
                   ) : (
-                    <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-slate-300">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-300">
                       <ImagePlus size={18} />
                     </span>
                   )}
@@ -495,20 +498,20 @@ export default function ProdukSparepart() {
                 />
               </div>
 
-              {formError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{formError}</p>}
+              {formError && <p className="rounded-2xl bg-rose-50 px-4 py-2.5 text-xs text-rose-600">{formError}</p>}
 
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setEditingId(null) }}
-                  className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-lg bg-[#12123a] py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52] disabled:opacity-50"
+                  className="flex-1 rounded-full bg-[#12123a] py-2.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
                 >
                   {uploading ? 'Mengupload foto...' : saving ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Simpan'}
                 </button>
@@ -521,14 +524,17 @@ export default function ProdukSparepart() {
   )
 }
 
-function StatCard({ icon, iconBg, label, value }) {
+function StatCard({ icon, label, value, isText, accent = 'indigo' }) {
+  const accents = {
+    indigo: 'bg-indigo-50 text-indigo-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    rose: 'bg-rose-50 text-rose-500',
+  }
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>{icon}</span>
-      <div>
-        <p className="text-xs text-slate-400">{label}</p>
-        <p className="text-lg font-bold text-slate-900">{value}</p>
-      </div>
+    <div className="rounded-3xl bg-white p-6">
+      <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${accents[accent]}`}>{icon}</span>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className={`mt-1 font-bold text-slate-900 ${isText ? 'text-lg' : 'text-2xl'}`}>{value}</p>
     </div>
   )
 }
