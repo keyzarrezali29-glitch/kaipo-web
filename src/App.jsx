@@ -12,6 +12,7 @@ import DataMekanik from './pages/admin/DataMekanik'
 import EditMekanik from './pages/admin/Editmekanik'
 import ProfilMekanikAdmin from './pages/admin/Profilmekanikadmin'
 import DataKendaraan from './pages/admin/DataKendaraan'
+import MerekKendaraan from './pages/admin/MerekKendaraan'
 import DataServis from './pages/admin/DataServis'
 import ProdukSparepart from './pages/admin/ProdukSparepart'
 import Transaksi from './pages/admin/Transaksi'
@@ -54,6 +55,7 @@ function App() {
         <Route path="mekanik/:id/edit" element={<EditMekanik />} />
         <Route path="mekanik/:id" element={<ProfilMekanikAdmin />} />
         <Route path="kendaraan" element={<DataKendaraan />} />
+        <Route path="merek" element={<MerekKendaraan />} />
         <Route path="servis" element={<DataServis />} />
         <Route path="produk" element={<ProdukSparepart />} />
         <Route path="transaksi" element={<Transaksi />} />

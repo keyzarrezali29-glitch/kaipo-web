@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Car, Plus, Pencil, Trash2, Star, X, AlertCircle, CheckCircle2, Camera } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -24,6 +24,7 @@ function kondisiClass(kondisi) {
 export default function CustomerKendaraan() {
   const [loading, setLoading] = useState(true)
   const [kendaraanList, setKendaraanList] = useState([])
+  const [merekAktif, setMerekAktif] = useState([]) // daftar merek yang dilayani bengkel
   const [notice, setNotice] = useState({ type: '', message: '' })
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -35,14 +36,19 @@ export default function CustomerKendaraan() {
   async function load() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const { data, error } = await supabase
-        .from('kendaraan')
-        .select('*')
-        .eq('customer_id', user.id)
-        .order('is_default', { ascending: false })
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      setKendaraanList(data ?? [])
+      const [kendaraanRes, merekRes] = await Promise.all([
+        supabase
+          .from('kendaraan')
+          .select('*')
+          .eq('customer_id', user.id)
+          .order('is_default', { ascending: false })
+          .order('created_at', { ascending: false }),
+        supabase.from('merek_kendaraan').select('nama').eq('is_active', true).order('nama'),
+      ])
+      if (kendaraanRes.error) throw kendaraanRes.error
+      if (merekRes.error) throw merekRes.error
+      setKendaraanList(kendaraanRes.data ?? [])
+      setMerekAktif((merekRes.data ?? []).map((m) => m.nama))
     } catch (err) {
       console.error('Gagal memuat kendaraan:', err)
       setNotice({ type: 'error', message: err.message || 'Gagal memuat data kendaraan' })
@@ -54,6 +60,17 @@ export default function CustomerKendaraan() {
   useEffect(() => {
     load()
   }, [])
+
+  // Pilihan merek di form. Kalau kendaraan lama mereknya sudah tidak ada di daftar,
+  // tetap ditampilkan supaya data lama tidak hilang saat diedit.
+  const opsiMerek = useMemo(() => {
+    const dasar = [...merekAktif]
+    const sekarang = form.merek?.trim()
+    if (sekarang && !dasar.some((m) => m.toLowerCase() === sekarang.toLowerCase())) {
+      dasar.unshift(sekarang)
+    }
+    return dasar
+  }, [merekAktif, form.merek])
 
   function bukaModalTambah() {
     setForm(FORM_KOSONG)
@@ -90,8 +107,12 @@ export default function CustomerKendaraan() {
 
   async function handleSimpan() {
     setNotice({ type: '', message: '' })
-    if (!form.merek || !form.model || !form.plat_nomor) {
-      setNotice({ type: 'error', message: 'Merek, model, dan plat nomor wajib diisi.' })
+    if (!form.merek) {
+      setNotice({ type: 'error', message: 'Pilih merek kendaraan dulu.' })
+      return
+    }
+    if (!form.model || !form.plat_nomor) {
+      setNotice({ type: 'error', message: 'Model dan plat nomor wajib diisi.' })
       return
     }
 
@@ -305,8 +326,33 @@ export default function CustomerKendaraan() {
             </label>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Merek" value={form.merek} onChange={(v) => setForm({ ...form, merek: v })} placeholder="Toyota" />
+              {/* Merek: pilihan dari daftar yang diatur admin */}
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-500">Merek</label>
+                <select
+                  value={form.merek}
+                  onChange={(e) => setForm({ ...form, merek: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
+                >
+                  <option value="">Pilih merek</option>
+                  {opsiMerek.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+
               <Field label="Model" value={form.model} onChange={(v) => setForm({ ...form, model: v })} placeholder="Supra" />
+
+              {merekAktif.length === 0 ? (
+                <p className="col-span-2 -mt-1 text-[11px] text-rose-500">
+                  Belum ada merek yang dilayani. Silakan hubungi admin bengkel.
+                </p>
+              ) : (
+                <p className="col-span-2 -mt-1 text-[11px] text-slate-400">
+                  Bengkel hanya melayani merek yang ada di daftar. Merek Anda tidak ada? Hubungi admin.
+                </p>
+              )}
+
               <Field label="Plat Nomor" value={form.plat_nomor} onChange={(v) => setForm({ ...form, plat_nomor: v })} placeholder="B 1234 XYZ" full />
               <Field label="Tahun" type="number" value={form.tahun} onChange={(v) => setForm({ ...form, tahun: v })} placeholder="2020" />
               <Field label="Warna" value={form.warna} onChange={(v) => setForm({ ...form, warna: v })} placeholder="Hitam" />
@@ -339,7 +385,7 @@ export default function CustomerKendaraan() {
 
             <button
               onClick={handleSimpan}
-              disabled={submitting}
+              disabled={submitting || merekAktif.length === 0}
               className="mt-6 w-full rounded-full bg-[#12123a] py-3.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
             >
               {submitting ? 'Menyimpan...' : form.id ? 'Simpan Perubahan' : 'Tambah Kendaraan'}

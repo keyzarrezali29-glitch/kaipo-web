@@ -28,9 +28,17 @@ const STATUS_LABEL = {
 const STATUS_CLASS = {
   menunggu_konfirmasi: 'bg-blue-50 text-blue-700 ring-blue-100',
   dijadwalkan: 'bg-amber-50 text-amber-700 ring-amber-100',
-  diproses: 'bg-blue-50 text-blue-700 ring-blue-100',
+  diproses: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
   selesai: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
   dibatalkan: 'bg-rose-50 text-rose-700 ring-rose-100',
+}
+
+const STATUS_DOT = {
+  menunggu_konfirmasi: 'bg-blue-500',
+  dijadwalkan: 'bg-amber-500',
+  diproses: 'bg-indigo-500',
+  selesai: 'bg-emerald-500',
+  dibatalkan: 'bg-rose-500',
 }
 
 const TABS = [
@@ -74,7 +82,7 @@ export default function BookingServis() {
             customer:customer_id ( full_name, avatar_url ),
             kendaraan:kendaraan_id ( merek, model ),
             layanan:layanan_id ( id, nama ),
-            mekanik:mekanik_id ( full_name )
+            mekanik:mekanik_id ( full_name, avatar_url )
           `)
           .order('tanggal', { ascending: false })
           .order('waktu', { ascending: false }),
@@ -181,7 +189,7 @@ export default function BookingServis() {
           <p className="mt-1 text-sm text-slate-400">Kelola dan konfirmasi booking servis yang masuk dari customer</p>
         </div>
         <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
           Live
         </span>
       </header>
@@ -215,7 +223,7 @@ export default function BookingServis() {
       </div>
 
       {/* Filter bar */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <select
           value={tanggalFilter}
           onChange={(e) => setTanggalFilter(e.target.value)}
@@ -248,81 +256,112 @@ export default function BookingServis() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Tabel */}
       <div className="rounded-3xl bg-white p-3">
         {paginated.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-slate-400">Tidak ada booking yang cocok dengan filter ini.</p>
+          <p className="px-4 py-12 text-center text-sm text-slate-400">Tidak ada booking yang cocok dengan filter ini.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
-                  <th className="px-4 py-3 font-medium">Customer</th>
-                  <th className="px-4 py-3 font-medium">Layanan</th>
-                  <th className="px-4 py-3 font-medium">Jadwal</th>
-                  <th className="px-4 py-3 font-medium">Mekanik</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium"></th>
+                <tr className="bg-slate-50 text-left text-xs text-slate-500">
+                  <th className="rounded-l-2xl px-5 py-3.5 font-medium">Customer</th>
+                  <th className="px-4 py-3.5 font-medium">Layanan</th>
+                  <th className="px-4 py-3.5 font-medium">Jadwal</th>
+                  <th className="px-4 py-3.5 font-medium">Mekanik</th>
+                  <th className="px-4 py-3.5 font-medium">Status</th>
+                  <th className="rounded-r-2xl px-5 py-3.5"></th>
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((b) => (
-                  <tr key={b.id} className="border-t border-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar nama={b.customer?.full_name} url={b.customer?.avatar_url} className="h-9 w-9 text-xs" />
-                        <div>
-                          <p className="font-medium text-slate-900">{b.customer?.full_name ?? '-'}</p>
-                          <p className="text-xs text-slate-400">
-                            #{b.kode_booking} · {[b.kendaraan?.merek, b.kendaraan?.model].filter(Boolean).join(' ') || '-'}
-                          </p>
+                {paginated.map((b) => {
+                  const menunggu = b.status === 'menunggu_konfirmasi'
+                  const sudahPilih = Boolean(pilihMekanik[b.id])
+                  return (
+                    <tr
+                      key={b.id}
+                      className={`border-b border-slate-100 transition last:border-0 hover:bg-slate-50/70 ${
+                        menunggu ? 'bg-blue-50/30' : ''
+                      }`}
+                    >
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3.5">
+                          <Avatar nama={b.customer?.full_name} url={b.customer?.avatar_url} className="h-11 w-11 text-sm" />
+                          <div>
+                            <p className="font-semibold text-slate-900">{b.customer?.full_name ?? '-'}</p>
+                            <p className="mt-0.5 font-mono text-xs text-slate-400">#{b.kode_booking}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">{b.layanan?.nama ?? '-'}</td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {formatTanggal(b.tanggal)}{b.waktu ? `, ${b.waktu.slice(0, 5)}` : ''}
-                    </td>
-                    <td className="px-4 py-3">
-                      {b.mekanik?.full_name ? (
-                        <span className="text-slate-700">{b.mekanik.full_name}</span>
-                      ) : b.status === 'menunggu_konfirmasi' ? (
-                        <select
-                          value={pilihMekanik[b.id] ?? ''}
-                          onChange={(e) => setPilihMekanik((prev) => ({ ...prev, [b.id]: e.target.value }))}
-                          className="rounded-full bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 outline-none ring-1 ring-inset ring-rose-100"
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <p className="font-medium text-slate-800">{b.layanan?.nama ?? '-'}</p>
+                        <p className="mt-0.5 text-xs text-slate-400">
+                          {[b.kendaraan?.merek, b.kendaraan?.model].filter(Boolean).join(' ') || '-'}
+                        </p>
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <p className="font-medium text-slate-800">{formatTanggal(b.tanggal)}</p>
+                        <p className="mt-0.5 text-xs text-slate-400">{b.waktu ? `${b.waktu.slice(0, 5)} WIB` : '-'}</p>
+                      </td>
+
+                      <td className="px-4 py-4">
+                        {b.mekanik?.full_name ? (
+                          <div className="flex items-center gap-2.5">
+                            <Avatar nama={b.mekanik.full_name} url={b.mekanik.avatar_url} className="h-8 w-8 text-[11px]" />
+                            <span className="font-medium text-slate-700">{b.mekanik.full_name}</span>
+                          </div>
+                        ) : menunggu ? (
+                          <select
+                            value={pilihMekanik[b.id] ?? ''}
+                            onChange={(e) => setPilihMekanik((prev) => ({ ...prev, [b.id]: e.target.value }))}
+                            className={`cursor-pointer rounded-full px-4 py-2 text-xs font-semibold outline-none ring-1 ring-inset transition ${
+                              sudahPilih
+                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+                                : 'bg-rose-50 text-rose-600 ring-rose-100'
+                            }`}
+                          >
+                            <option value="">Pilih mekanik</option>
+                            {mekanikList.map((m) => (
+                              <option key={m.id} value={m.id}>{m.full_name}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${
+                            STATUS_CLASS[b.status] || 'bg-slate-50 text-slate-600 ring-slate-100'
+                          }`}
                         >
-                          <option value="">Belum ditugaskan</option>
-                          {mekanikList.map((m) => (
-                            <option key={m.id} value={m.id}>{m.full_name}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${STATUS_CLASS[b.status] || 'bg-slate-50 text-slate-600 ring-slate-100'}`}>
-                        {STATUS_LABEL[b.status] || b.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {b.status === 'menunggu_konfirmasi' ? (
-                        <button
-                          onClick={() => handleKonfirmasi(b.id)}
-                          disabled={!pilihMekanik[b.id] || confirming === b.id}
-                          className="rounded-full bg-[#12123a] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-40"
-                        >
-                          {confirming === b.id ? 'Memproses...' : 'Konfirmasi'}
-                        </button>
-                      ) : (
-                        <button className="rounded-full border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">
-                          Detail
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                          <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[b.status] || 'bg-slate-400'}`} />
+                          {STATUS_LABEL[b.status] || b.status}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4 text-right">
+                        {menunggu ? (
+                          <button
+                            onClick={() => handleKonfirmasi(b.id)}
+                            disabled={!sudahPilih || confirming === b.id}
+                            title={sudahPilih ? 'Konfirmasi booking ini' : 'Pilih mekanik dulu'}
+                            className="rounded-full bg-[#12123a] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#1c1c52] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                          >
+                            {confirming === b.id ? 'Memproses...' : 'Konfirmasi'}
+                          </button>
+                        ) : (
+                          <button className="rounded-full border border-slate-200 px-5 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-[#12123a] hover:text-[#12123a]">
+                            Detail
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

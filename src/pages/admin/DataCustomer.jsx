@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Eye, Pencil, X, AlertCircle } from 'lucide-react'
+import { Search, Eye, Pencil, X, AlertCircle, Mail, Phone, Car } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Avatar from '../../components/Avatar'
 
@@ -174,31 +174,31 @@ export default function DataCustomer() {
   }
 
   return (
-    <div className="min-h-full bg-slate-100 px-8 py-6">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="min-h-full">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Data Customer</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Data Customer</h1>
           <p className="mt-1 text-sm text-slate-400">Kelola data pelanggan yang terdaftar di Kai-Po</p>
         </div>
         <button
           onClick={bukaModal}
-          className="rounded-lg bg-[#12123a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1c52]"
+          className="rounded-full bg-[#12123a] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1c1c52]"
         >
           + Tambah Customer
         </button>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
+        <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           Gagal memuat sebagian data: {error}
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="semua">Semua Status</option>
           <option value="aktif">Aktif</option>
@@ -208,85 +208,112 @@ export default function DataCustomer() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#2e4bd6]"
+          className="rounded-full bg-white px-4 py-2.5 text-sm text-slate-600 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
         >
           <option value="terbaru">Urutkan: Terbaru</option>
           <option value="nama">Urutkan: Nama (A-Z)</option>
         </select>
 
         <div className="relative ml-auto">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama, email, atau no. HP..."
-            className="w-72 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-[#2e4bd6]"
+            className="w-72 rounded-full bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none ring-1 ring-slate-200 focus:ring-[#12123a]"
           />
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white p-2 shadow-sm">
+      {/* Tabel */}
+      <div className="rounded-3xl bg-white p-3">
         {paginated.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-slate-400">Tidak ada customer yang cocok dengan filter ini.</p>
+          <p className="px-4 py-12 text-center text-sm text-slate-400">Tidak ada customer yang cocok dengan filter ini.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400">
-                  <th className="px-4 py-3 font-medium">Customer</th>
-                  <th className="px-4 py-3 font-medium">Kontak</th>
-                  <th className="px-4 py-3 font-medium">Kendaraan</th>
-                  <th className="px-4 py-3 font-medium">Total Servis</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium"></th>
+                <tr className="bg-slate-50 text-left text-xs text-slate-500">
+                  <th className="rounded-l-2xl px-5 py-3.5 font-medium">Customer</th>
+                  <th className="px-4 py-3.5 font-medium">Kontak</th>
+                  <th className="px-4 py-3.5 font-medium">Kendaraan</th>
+                  <th className="px-4 py-3.5 font-medium">Total servis</th>
+                  <th className="px-4 py-3.5 font-medium">Status</th>
+                  <th className="rounded-r-2xl px-5 py-3.5"></th>
                 </tr>
               </thead>
               <tbody>
                 {paginated.map((c) => (
-                  <tr key={c.id} className="border-t border-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar nama={c.full_name} url={c.avatar_url} className="h-9 w-9 text-xs" />
+                  <tr key={c.id} className="border-b border-slate-100 transition last:border-0 hover:bg-slate-50/70">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3.5">
+                        <Avatar nama={c.full_name} url={c.avatar_url} className="h-11 w-11 text-sm" />
                         <div>
-                          <p className="font-medium text-slate-900">{c.full_name}</p>
+                          <p className="font-semibold text-slate-900">{c.full_name}</p>
                           <p className="text-xs text-slate-400">Bergabung {formatTanggalGabung(c.created_at)}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <p className="text-slate-700">{c.email}</p>
-                      <p className="text-xs text-slate-400">{c.phone || '-'}</p>
+
+                    <td className="px-4 py-4">
+                      <p className="flex items-center gap-2 text-slate-700">
+                        <Mail size={13} className="shrink-0 text-slate-400" />
+                        {c.email}
+                      </p>
+                      <p className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                        <Phone size={13} className="shrink-0" />
+                        {c.phone || 'Belum diisi'}
+                      </p>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{c.jumlahKendaraan} kendaraan</td>
-                    <td className="px-4 py-3 text-slate-700">{c.jumlahServis}</td>
-                    <td className="px-4 py-3">
+
+                    <td className="px-4 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+                          c.jumlahKendaraan > 0 ? 'bg-slate-100 text-slate-700' : 'bg-slate-50 text-slate-400'
+                        }`}
+                      >
+                        <Car size={13} />
+                        {c.jumlahKendaraan} kendaraan
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <span className="text-base font-bold text-slate-900">{c.jumlahServis}</span>
+                      <span className="ml-1 text-xs text-slate-400">servis</span>
+                    </td>
+
+                    <td className="px-4 py-4">
                       <button
                         onClick={() => toggleStatus(c)}
                         disabled={togglingId === c.id}
                         title="Klik buat ubah status"
-                        className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-40 ${
-                          c.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset transition disabled:opacity-40 ${
+                          c.is_active
+                            ? 'bg-emerald-50 text-emerald-700 ring-emerald-100 hover:bg-emerald-100'
+                            : 'bg-slate-100 text-slate-500 ring-slate-200 hover:bg-slate-200'
                         }`}
                       >
+                        <span className={`h-1.5 w-1.5 rounded-full ${c.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                         {c.is_active ? 'Aktif' : 'Nonaktif'}
                       </button>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
+
+                    <td className="px-5 py-4">
+                      <div className="flex items-center justify-end gap-2">
                         <Link
                           to={`/admin/customer/${c.id}`}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 ring-1 ring-slate-200 transition hover:bg-[#12123a] hover:text-white hover:ring-[#12123a]"
                           title="Lihat detail"
                         >
-                          <Eye size={16} />
+                          <Eye size={15} />
                         </Link>
                         <Link
                           to={`/admin/customer/${c.id}/edit`}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 ring-1 ring-slate-200 transition hover:bg-[#12123a] hover:text-white hover:ring-[#12123a]"
                           title="Edit"
                         >
-                          <Pencil size={16} />
+                          <Pencil size={15} />
                         </Link>
                       </div>
                     </td>
@@ -299,7 +326,7 @@ export default function DataCustomer() {
       </div>
 
       {filtered.length > 0 && (
-        <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
+        <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
           <p>
             Menampilkan {(pageSafe - 1) * PER_PAGE + 1}–{Math.min(pageSafe * PER_PAGE, filtered.length)} dari {filtered.length.toLocaleString('id-ID')} customer
           </p>
@@ -307,7 +334,7 @@ export default function DataCustomer() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={pageSafe === 1}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+              className="rounded-full bg-white px-3 py-2 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-40"
             >
               ‹
             </button>
@@ -317,8 +344,8 @@ export default function DataCustomer() {
                 <button
                   key={n}
                   onClick={() => setPage(n)}
-                  className={`h-8 w-8 rounded-lg text-xs font-medium ${
-                    n === pageSafe ? 'bg-[#12123a] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                  className={`h-9 w-9 rounded-full text-xs font-medium ${
+                    n === pageSafe ? 'bg-[#12123a] text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
                   }`}
                 >
                   {n}
@@ -327,7 +354,7 @@ export default function DataCustomer() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={pageSafe === totalPages}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 hover:bg-slate-50 disabled:opacity-40"
+              className="rounded-full bg-white px-3 py-2 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-40"
             >
               ›
             </button>
@@ -336,17 +363,20 @@ export default function DataCustomer() {
       )}
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900">Tambah Customer</h2>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-700">
-                <X size={20} />
+              <button
+                onClick={() => setModalOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X size={18} />
               </button>
             </div>
 
             {notice.message && (
-              <div className="mb-4 flex items-start gap-2 rounded-lg bg-rose-50 p-3 text-xs font-medium text-rose-600">
+              <div className="mb-4 flex items-start gap-2 rounded-2xl bg-rose-50 p-3 text-xs font-medium text-rose-600">
                 <AlertCircle size={14} className="mt-0.5 shrink-0" /> {notice.message}
               </div>
             )}
@@ -361,7 +391,7 @@ export default function DataCustomer() {
             <button
               onClick={handleTambahCustomer}
               disabled={submitting}
-              className="mt-5 w-full rounded-xl bg-[#12123a] py-3 text-sm font-semibold text-white hover:bg-[#1c1c52] disabled:opacity-50"
+              className="mt-6 w-full rounded-full bg-[#12123a] py-3.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
             >
               {submitting ? 'Menyimpan...' : 'Tambah Customer'}
             </button>
@@ -375,13 +405,13 @@ export default function DataCustomer() {
 function FieldFull({ label, value, onChange, placeholder, type = 'text' }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold text-slate-500">{label}</label>
+      <label className="mb-1.5 block text-xs font-semibold text-slate-500">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-[#12123a]"
       />
     </div>
   )
