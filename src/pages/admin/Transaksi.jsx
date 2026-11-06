@@ -9,10 +9,23 @@ function formatRupiah(angka) {
   return `Rp ${Number(angka || 0).toLocaleString('id-ID')}`
 }
 
-function formatTanggal(dateStr) {
+// Tanggal + jam dalam zona waktu WIB, contoh: "4 Nov 2026, 11:22 WIB"
+function formatTanggalJam(dateStr) {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+  const tanggal = d.toLocaleDateString('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+  const jam = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jakarta',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(d)
+  return `${tanggal}, ${jam} WIB`
 }
 
 const STATUS_LABEL = { menunggu: 'Menunggu', berhasil: 'Berhasil', gagal: 'Gagal', refund: 'Refund' }
@@ -34,6 +47,32 @@ const TABS = [
   { key: 'refund', label: 'Refund' },
 ]
 
+// Kolom yang diambil dari tabel transaksi. `dibayar_pada` ditambahkan terpisah
+// supaya halaman tetap jalan kalau kolomnya belum dibuat di database.
+function kolomTransaksi(denganDibayarPada) {
+  return `
+    id, kode_transaksi, jenis, total, metode_pembayaran, status, created_at${denganDibayarPada ? ', dibayar_pada' : ''},
+    customer:customer_id ( full_name ),
+    booking:booking_id ( kode_booking, layanan:layanan_id ( nama ) )
+  `
+}
+
+// Teks waktu di bawah kode transaksi
+function WaktuTransaksi({ t }) {
+  if (t.status === 'berhasil') {
+    if (t.dibayar_pada) {
+      return <p className="text-xs text-emerald-600">Dibayar {formatTanggalJam(t.dibayar_pada)}</p>
+    }
+    // Transaksi lama: jam bayar tidak tercatat, pakai jam transaksi dibuat sebagai perkiraan
+    return (
+      <p className="text-xs text-slate-400" title="Jam bayar tidak tercatat, ini jam transaksi dibuat">
+        Dibayar ± {formatTanggalJam(t.created_at)}
+      </p>
+    )
+  }
+  return <p className="text-xs text-slate-400">Dibuat {formatTanggalJam(t.created_at)}</p>
+}
+
 export default function Transaksi() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -48,17 +87,22 @@ export default function Transaksi() {
   async function loadData() {
     try {
       setError(null)
-      const [transaksiRes, itemRes] = await Promise.all([
+
+      const ambilTransaksi = (denganDibayarPada) =>
         supabase
           .from('transaksi')
-          .select(`
-            id, kode_transaksi, jenis, total, metode_pembayaran, status, created_at,
-            customer:customer_id ( full_name ),
-            booking:booking_id ( kode_booking, layanan:layanan_id ( nama ) )
-          `)
-          .order('created_at', { ascending: false }),
+          .select(kolomTransaksi(denganDibayarPada))
+          .order('created_at', { ascending: false })
+
+      let [transaksiRes, itemRes] = await Promise.all([
+        ambilTransaksi(true),
         supabase.from('transaksi_item').select('transaksi_id, qty'),
       ])
+
+      // Kolom dibayar_pada belum ada di database -> ulangi tanpa kolom itu
+      if (transaksiRes.error && (transaksiRes.error.code === '42703' || String(transaksiRes.error.message).includes('dibayar_pada'))) {
+        transaksiRes = await ambilTransaksi(false)
+      }
 
       if (transaksiRes.error) throw transaksiRes.error
       if (itemRes.error) throw itemRes.error
@@ -88,7 +132,8 @@ export default function Transaksi() {
         .update({ status: statusBaru })
         .eq('id', transaksi.id)
       if (updateError) throw updateError
-      setTransaksiList((prev) => prev.map((t) => (t.id === transaksi.id ? { ...t, status: statusBaru } : t)))
+      // Muat ulang supaya jam dibayar (diisi otomatis oleh database) ikut tampil
+      await loadData()
     } catch (err) {
       console.error('Gagal ubah status:', err)
       alert('Gagal ubah status: ' + err.message)
@@ -216,7 +261,7 @@ export default function Transaksi() {
                   <tr key={t.id} className="border-t border-slate-50">
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-900">#{t.kode_transaksi}</p>
-                      <p className="text-xs text-slate-400">{formatTanggal(t.created_at)}</p>
+                      <WaktuTransaksi t={t} />
                     </td>
                     <td className="px-4 py-3 text-slate-700">{t.customer?.full_name ?? '-'}</td>
                     <td className="px-4 py-3">

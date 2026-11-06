@@ -5,6 +5,7 @@ import Register from './pages/Register'
 import AdminLayout from './pages/admin/AdminLayout'
 import DashboardAdmin from './pages/admin/DashboardAdmin'
 import BookingServis from './pages/admin/BookingServis'
+import DetailBookingAdmin from './pages/admin/DetailBookingAdmin'
 import DataCustomer from './pages/admin/DataCustomer'
 import DetailCustomer from './pages/admin/DetailCustomer'
 import EditCustomer from './pages/admin/EditCustomer'
@@ -48,6 +49,7 @@ function App() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<DashboardAdmin />} />
         <Route path="booking" element={<BookingServis />} />
+        <Route path="booking/:id" element={<DetailBookingAdmin />} />
         <Route path="customer" element={<DataCustomer />} />
         <Route path="customer/:id" element={<DetailCustomer />} />
         <Route path="customer/:id/edit" element={<EditCustomer />} />

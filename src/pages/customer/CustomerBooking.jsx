@@ -22,6 +22,15 @@ const STATUS_CLASS = {
   dibatalkan: 'bg-rose-50 text-rose-700 ring-rose-100',
 }
 
+// Tanggal lokal (WIB) format YYYY-MM-DD. JANGAN pakai toISOString() karena itu UTC
+// dan bisa meleset sehari kalau dijalankan sebelum jam 07.00 pagi.
+function toYMD(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 function generateKalender(bulanOffset = 0) {
   const now = new Date()
   const target = new Date(now.getFullYear(), now.getMonth() + bulanOffset, 1)
@@ -41,8 +50,10 @@ function generateKalender(bulanOffset = 0) {
 
 function formatTanggal(tanggalStr) {
   if (!tanggalStr) return '-'
-  const d = new Date(tanggalStr)
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+  // Parse manual (YYYY-MM-DD) supaya tidak kena pergeseran zona waktu
+  const [y, m, d] = String(tanggalStr).slice(0, 10).split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 function formatRupiah(n) {
   return `Rp ${Number(n || 0).toLocaleString('id-ID')}`
@@ -101,6 +112,11 @@ function BuatBookingTab() {
   const [submitting, setSubmitting] = useState(false)
   const [notice, setNotice] = useState({ type: '', message: '' })
 
+  // --- Slot yang sudah dipakai booking lain: { 'YYYY-MM-DD': Set(['09:00', ...]) } ---
+  const [slotTerisi, setSlotTerisi] = useState({})
+  const [slotError, setSlotError] = useState(false) // true kalau gagal memuat slot terisi dari database
+  const [kapasitas, setKapasitas] = useState(null) // jumlah mekanik aktif yang tidak libur = maks booking per jam
+
   // --- Kode promo ---
   const [promoInput, setPromoInput] = useState('')
   const [promoApplied, setPromoApplied] = useState(null) // baris promo yang udah divalidasi & dipakai
@@ -109,6 +125,62 @@ function BuatBookingTab() {
 
   const kalender = generateKalender(bulanOffset)
   const bisaMundur = bulanOffset > 0 // gak bisa balik ke bulan yang udah lewat
+
+  // Waktu sekarang (dihitung tiap render, jadi selalu ikut hari ini)
+  const sekarang = new Date()
+  const todayStr = toYMD(sekarang)
+  const menitSekarang = sekarang.getHours() * 60 + sekarang.getMinutes()
+
+  // Jam sudah lewat? (hanya berlaku kalau tanggalnya hari ini)
+  function jamSudahLewat(tanggal, jam) {
+    if (tanggal !== todayStr) return false
+    const [h, m] = jam.split(':').map(Number)
+    return h * 60 + m <= menitSekarang
+  }
+  // Jam penuh kalau jumlah booking aktif di jam itu sudah sama dengan jumlah mekanik yang tersedia
+  function jamSudahDipakai(tanggal, jam) {
+    const jumlah = slotTerisi[tanggal]?.[jam] ?? 0
+    if (jumlah === Infinity) return true // ditandai penuh secara lokal setelah ditolak database
+    return kapasitas !== null && jumlah >= kapasitas
+  }
+  function jamTidakTersedia(tanggal, jam) {
+    return jamSudahDipakai(tanggal, jam) || jamSudahLewat(tanggal, jam)
+  }
+  // Tanggal penuh = semua jam sudah dipakai / sudah lewat
+  function tanggalPenuh(tanggal) {
+    return JAM_SLOT.every((j) => jamTidakTersedia(tanggal, j))
+  }
+
+  async function muatSlotTerisi() {
+    const [slotRes, kapRes] = await Promise.all([
+      supabase.rpc('get_slot_terisi', { p_dari: toYMD(new Date()) }),
+      supabase.rpc('get_kapasitas_mekanik'),
+    ])
+    if (slotRes.error || kapRes.error) {
+      console.error('Gagal memuat slot terisi:', slotRes.error || kapRes.error)
+      setSlotError(true)
+      return
+    }
+    setSlotError(false)
+    setKapasitas(Number(kapRes.data ?? 0))
+    // peta[tanggal][jam] = jumlah booking aktif
+    const peta = {}
+    for (const r of slotRes.data ?? []) {
+      const tgl = String(r.tanggal).slice(0, 10)
+      if (!peta[tgl]) peta[tgl] = {}
+      peta[tgl][String(r.waktu).slice(0, 5)] = Number(r.jumlah)
+    }
+    setSlotTerisi(peta)
+  }
+
+  // Tandai satu slot sebagai terisi secara lokal (dipakai saat database menolak karena slot sudah diambil)
+  function tandaiTerisi(tanggal, jam) {
+    setSlotTerisi((prev) => {
+      const salinan = { ...prev }
+      salinan[tanggal] = { ...(prev[tanggal] ?? {}), [jam]: Infinity }
+      return salinan
+    })
+  }
 
   useEffect(() => {
     async function load() {
@@ -123,6 +195,7 @@ function BuatBookingTab() {
         setKendaraanList(kendaraanRes.data ?? [])
         if (kendaraanRes.data?.length) setSelectedKendaraan(kendaraanRes.data[0])
         setBengkel(bengkelRes.data ?? null)
+        await muatSlotTerisi()
       } catch (err) {
         console.error('Gagal memuat data booking:', err)
       } finally {
@@ -135,6 +208,13 @@ function BuatBookingTab() {
   function gantiBulan(arah) {
     setBulanOffset((prev) => Math.max(0, prev + arah))
     setSelectedTanggal(null) // reset tanggal terpilih pas ganti bulan biar gak nyangkut ke tanggal bulan lain
+    setSelectedJam(null)
+  }
+
+  function pilihTanggal(tanggal) {
+    setSelectedTanggal(tanggal)
+    setSelectedJam(null) // jam direset, karena ketersediaan jam beda tiap tanggal
+    muatSlotTerisi() // refresh biar datanya paling baru
   }
 
   async function handleCekPromo() {
@@ -149,14 +229,14 @@ function BuatBookingTab() {
 
     setCheckingPromo(true)
     try {
-      const todayStr = new Date().toISOString().slice(0, 10)
+      const hariIni = toYMD(new Date())
       const { data, error } = await supabase
         .from('promo')
         .select('*')
         .eq('kode', kode)
         .eq('is_active', true)
-        .lte('berlaku_dari', todayStr)
-        .gte('berlaku_sampai', todayStr)
+        .lte('berlaku_dari', hariIni)
+        .gte('berlaku_sampai', hariIni)
         .maybeSingle()
 
       if (error) throw error
@@ -198,6 +278,12 @@ function BuatBookingTab() {
     if (!selectedKendaraan) return setNotice({ type: 'error', message: 'Pilih kendaraan dulu ya.' })
     if (!selectedTanggal || !selectedJam) return setNotice({ type: 'error', message: 'Pilih tanggal dan jam dulu ya.' })
 
+    // Validasi ulang tepat sebelum kirim (misal halaman dibiarkan terbuka lama)
+    if (selectedTanggal < todayStr || jamSudahLewat(selectedTanggal, selectedJam)) {
+      setSelectedJam(null)
+      return setNotice({ type: 'error', message: 'Jadwal yang dipilih sudah lewat. Pilih tanggal dan jam yang baru.' })
+    }
+
     setSubmitting(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -223,7 +309,19 @@ function BuatBookingTab() {
         })
         .select()
         .single()
-      if (error) throw error
+
+      if (error) {
+        // 23505 = unique violation (index booking_slot_unik): slot baru saja diambil orang lain
+        if (error.code === '23505' || error.message?.includes('SLOT_PENUH')) {
+          const jamBentrok = selectedJam
+          tandaiTerisi(selectedTanggal, jamBentrok)
+          setSelectedJam(null)
+          await muatSlotTerisi()
+          setNotice({ type: 'error', message: `Jam ${jamBentrok} pada tanggal ini sudah penuh dipesan customer lain. Silakan pilih jam lain.` })
+          return
+        }
+        throw error
+      }
 
       setNotice({ type: 'success', message: `Booking berhasil diajukan! Kode: ${data.kode_booking}` })
       setSelectedLayanan(null)
@@ -231,6 +329,7 @@ function BuatBookingTab() {
       setSelectedJam(null)
       setCatatan('')
       hapusPromo()
+      await muatSlotTerisi()
     } catch (err) {
       setNotice({ type: 'error', message: err.message || 'Gagal membuat booking.' })
     } finally {
@@ -342,33 +441,80 @@ function BuatBookingTab() {
             {HARI.map((h, i) => <span key={i}>{h}</span>)}
           </div>
           <div className="mb-6 grid grid-cols-7 gap-1">
-            {kalender.days.map((d, i) => (
-              <button
-                key={i}
-                disabled={!d}
-                onClick={() => d && setSelectedTanggal(d.tanggal)}
-                className={`aspect-square rounded-full text-xs transition ${
-                  !d ? '' : selectedTanggal === d.tanggal ? 'bg-[#12123a] font-bold text-white' : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                {d?.label}
-              </button>
-            ))}
+            {kalender.days.map((d, i) => {
+              if (!d) return <span key={i} />
+
+              const sudahLewat = d.tanggal < todayStr
+              const penuh = !sudahLewat && tanggalPenuh(d.tanggal)
+              const nonaktif = sudahLewat || penuh
+              const terpilih = selectedTanggal === d.tanggal
+
+              let kelas = 'text-slate-700 hover:bg-slate-100'
+              if (nonaktif) kelas = 'cursor-not-allowed text-slate-300'
+              else if (terpilih) kelas = 'bg-[#12123a] font-bold text-white'
+
+              return (
+                <button
+                  key={i}
+                  disabled={nonaktif}
+                  onClick={() => pilihTanggal(d.tanggal)}
+                  title={penuh ? 'Semua jam sudah terisi' : sudahLewat ? 'Tanggal sudah lewat' : undefined}
+                  className={`aspect-square rounded-full text-xs transition ${kelas} ${penuh ? 'line-through' : ''}`}
+                >
+                  {d.label}
+                </button>
+              )
+            })}
           </div>
           <p className="mb-2 text-xs font-semibold text-slate-500">Jam kedatangan</p>
           <div className="grid grid-cols-4 gap-2">
-            {JAM_SLOT.map((j) => (
-              <button
-                key={j}
-                onClick={() => setSelectedJam(j)}
-                className={`rounded-full border py-2.5 text-xs font-semibold transition ${
-                  selectedJam === j ? 'border-[#12123a] bg-[#12123a] text-white' : 'border-slate-200 text-slate-700 hover:border-slate-300'
-                }`}
-              >
-                {j}
-              </button>
-            ))}
+            {JAM_SLOT.map((j) => {
+              const belumPilihTanggal = !selectedTanggal
+              const terisi = !belumPilihTanggal && jamSudahDipakai(selectedTanggal, j)
+              const lewat = !belumPilihTanggal && jamSudahLewat(selectedTanggal, j)
+              const nonaktif = belumPilihTanggal || terisi || lewat
+              const terpilih = selectedJam === j
+
+              let kelas = 'border-slate-200 text-slate-700 hover:border-slate-300'
+              if (nonaktif) kelas = 'cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300'
+              else if (terpilih) kelas = 'border-[#12123a] bg-[#12123a] text-white'
+
+              return (
+                <button
+                  key={j}
+                  disabled={nonaktif}
+                  onClick={() => setSelectedJam(j)}
+                  title={terisi ? 'Jam ini sudah penuh dipesan customer lain' : lewat ? 'Jam ini sudah lewat' : undefined}
+                  className={`flex flex-col items-center justify-center rounded-full border py-2 text-xs font-semibold transition ${kelas}`}
+                >
+                  <span className={terisi ? 'line-through' : ''}>{j}</span>
+                  {terisi && <span className="text-[10px] font-medium leading-tight">Penuh</span>}
+                  {!nonaktif && kapasitas > 1 && (slotTerisi[selectedTanggal]?.[j] ?? 0) > 0 && (
+                    <span className="text-[10px] font-medium leading-tight opacity-70">
+                      Sisa {kapasitas - slotTerisi[selectedTanggal][j]}
+                    </span>
+                  )}
+                  {!terisi && lewat && <span className="text-[10px] font-medium leading-tight">Lewat</span>}
+                </button>
+              )
+            })}
           </div>
+          <p className="mt-3 text-[11px] text-slate-400">
+            {(() => {
+              if (!selectedTanggal) return 'Pilih tanggal dulu untuk melihat jam yang tersedia.'
+              if (kapasitas === 0) return 'Saat ini belum ada mekanik yang tersedia, jadi booking belum bisa dibuat.'
+              const terisiList = JAM_SLOT.filter((j) => jamSudahDipakai(selectedTanggal, j))
+              const pesan = []
+              if (terisiList.length) pesan.push(`Jam ${terisiList.join(', ')} sudah penuh dipesan customer lain, jadi tidak bisa dipilih.`)
+              if (selectedTanggal === todayStr) pesan.push('Jam yang sudah lewat juga tidak bisa dipilih.')
+              return pesan.join(' ') || 'Semua jam pada tanggal ini masih tersedia.'
+            })()}
+          </p>
+          {slotError && (
+            <p className="mt-2 text-[11px] font-medium text-rose-500">
+              Gagal memuat daftar jam yang sudah dipesan, jadi ketersediaan di atas mungkin belum akurat. Coba refresh halaman.
+            </p>
+          )}
         </div>
 
         {/* STEP 4: KODE PROMO */}

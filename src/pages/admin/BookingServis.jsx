@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Avatar from '../../components/Avatar'
@@ -15,6 +16,11 @@ function formatTanggal(tanggalStr) {
 function getTodayISO() {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+// Kunci slot jadwal: tanggal + jam (HH:MM), dipakai untuk mencari mekanik yang bentrok
+function kunciSlot(b) {
+  return `${b.tanggal}|${String(b.waktu ?? '').slice(0, 5)}`
 }
 
 const STATUS_LABEL = {
@@ -59,7 +65,7 @@ export default function BookingServis() {
   const [error, setError] = useState(null)
   const [bookings, setBookings] = useState([])
   const [layananList, setLayananList] = useState([])
-  const [mekanikList, setMekanikList] = useState([])
+  const [mekanikList, setMekanikList] = useState([]) // { id, full_name, status_kerja }
 
   const [activeTab, setActiveTab] = useState('semua')
   const [tanggalFilter, setTanggalFilter] = useState('semua') // 'semua' | 'hari_ini'
@@ -74,7 +80,7 @@ export default function BookingServis() {
   async function loadData() {
     try {
       setError(null)
-      const [bookingRes, layananRes, mekanikRes] = await Promise.all([
+      const [bookingRes, layananRes, mekanikRes, detailRes] = await Promise.all([
         supabase
           .from('booking')
           .select(`
@@ -87,16 +93,26 @@ export default function BookingServis() {
           .order('tanggal', { ascending: false })
           .order('waktu', { ascending: false }),
         supabase.from('layanan').select('id, nama').eq('is_active', true).order('nama'),
-        supabase.from('profiles').select('id, full_name').eq('role', 'mekanik').order('full_name'),
+        supabase.from('profiles').select('id, full_name, is_active').eq('role', 'mekanik').order('full_name'),
+        supabase.from('mekanik_detail').select('profile_id, status_kerja'),
       ])
 
       if (bookingRes.error) throw bookingRes.error
       if (layananRes.error) throw layananRes.error
       if (mekanikRes.error) throw mekanikRes.error
+      // Status kerja tidak fatal: kalau gagal dimuat, semua mekanik dianggap tersedia
+      if (detailRes.error) console.warn('Gagal memuat status kerja mekanik:', detailRes.error)
+
+      const statusMap = {}
+      for (const d of detailRes.data ?? []) statusMap[d.profile_id] = d.status_kerja
 
       setBookings(bookingRes.data ?? [])
       setLayananList(layananRes.data ?? [])
-      setMekanikList(mekanikRes.data ?? [])
+      setMekanikList(
+        (mekanikRes.data ?? [])
+          .filter((m) => m.is_active !== false) // mekanik nonaktif tidak bisa ditugaskan
+          .map((m) => ({ id: m.id, full_name: m.full_name, status_kerja: statusMap[m.id] ?? 'tersedia' }))
+      )
     } catch (err) {
       console.error('Gagal memuat booking:', err)
       setError(err.message || 'Gagal memuat data booking')
@@ -120,12 +136,52 @@ export default function BookingServis() {
     }
   }, [])
 
+  // Peta jadwal mekanik: 'tanggal|jam' -> Set(id mekanik yang sudah punya booking aktif di slot itu)
+  const jadwalMekanik = useMemo(() => {
+    const peta = new Map()
+    for (const b of bookings) {
+      if (!b.mekanik_id || b.status === 'dibatalkan') continue
+      const key = kunciSlot(b)
+      if (!peta.has(key)) peta.set(key, new Set())
+      peta.get(key).add(b.mekanik_id)
+    }
+    return peta
+  }, [bookings])
+
+  // Alasan mekanik tidak bisa dipilih untuk booking tertentu (null = bisa dipilih)
+  function alasanTidakTersedia(m, b) {
+    if (jadwalMekanik.get(kunciSlot(b))?.has(m.id)) return 'sudah ada jadwal'
+    if (m.status_kerja === 'libur') return 'libur'
+    return null
+  }
+
   async function handleKonfirmasi(bookingId) {
     const mekanikId = pilihMekanik[bookingId]
     if (!mekanikId) return
+    const booking = bookings.find((x) => x.id === bookingId)
+    if (!booking) return
 
     setConfirming(bookingId)
     try {
+      // Cek ulang ke database tepat sebelum konfirmasi (misal admin lain baru saja menugaskan mekanik yang sama)
+      const { data: bentrok, error: cekError } = await supabase
+        .from('booking')
+        .select('id')
+        .eq('mekanik_id', mekanikId)
+        .eq('tanggal', booking.tanggal)
+        .eq('waktu', booking.waktu)
+        .neq('status', 'dibatalkan')
+        .neq('id', bookingId)
+        .limit(1)
+      if (cekError) throw cekError
+
+      if (bentrok && bentrok.length > 0) {
+        alert('Mekanik tersebut baru saja mendapat jadwal di jam ini. Pilih mekanik lain.')
+        setPilihMekanik((prev) => ({ ...prev, [bookingId]: '' }))
+        await loadData()
+        return
+      }
+
       const { error: updateError } = await supabase
         .from('booking')
         .update({ status: 'dijadwalkan', mekanik_id: mekanikId })
@@ -137,7 +193,12 @@ export default function BookingServis() {
       await loadData()
     } catch (err) {
       console.error('Gagal konfirmasi booking:', err)
-      alert('Gagal konfirmasi booking: ' + err.message)
+      if (String(err.message || '').includes('MEKANIK_BENTROK')) {
+        alert('Mekanik tersebut sudah punya jadwal di jam ini. Pilih mekanik lain.')
+        await loadData()
+      } else {
+        alert('Gagal konfirmasi booking: ' + err.message)
+      }
     } finally {
       setConfirming(null)
     }
@@ -276,7 +337,14 @@ export default function BookingServis() {
               <tbody>
                 {paginated.map((b) => {
                   const menunggu = b.status === 'menunggu_konfirmasi'
-                  const sudahPilih = Boolean(pilihMekanik[b.id])
+
+                  // Ketersediaan mekanik untuk tanggal + jam booking ini
+                  const jumlahTersedia = mekanikList.filter((m) => !alasanTidakTersedia(m, b)).length
+                  const tidakAdaMekanik = jumlahTersedia === 0
+                  const mekanikDipilih = mekanikList.find((m) => m.id === pilihMekanik[b.id])
+                  // Pilihan dianggap tidak valid kalau mekanik yang dipilih ternyata sudah bentrok / libur
+                  const sudahPilih = Boolean(mekanikDipilih) && !alasanTidakTersedia(mekanikDipilih, b)
+
                   return (
                     <tr
                       key={b.id}
@@ -314,18 +382,38 @@ export default function BookingServis() {
                           </div>
                         ) : menunggu ? (
                           <select
-                            value={pilihMekanik[b.id] ?? ''}
+                            value={sudahPilih ? pilihMekanik[b.id] : ''}
+                            disabled={tidakAdaMekanik}
                             onChange={(e) => setPilihMekanik((prev) => ({ ...prev, [b.id]: e.target.value }))}
-                            className={`cursor-pointer rounded-full px-4 py-2 text-xs font-semibold outline-none ring-1 ring-inset transition ${
-                              sudahPilih
-                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
-                                : 'bg-rose-50 text-rose-600 ring-rose-100'
+                            title={
+                              tidakAdaMekanik
+                                ? 'Semua mekanik sedang libur atau sudah punya jadwal di jam ini'
+                                : undefined
+                            }
+                            className={`rounded-full px-4 py-2 text-xs font-semibold outline-none ring-1 ring-inset transition ${
+                              tidakAdaMekanik
+                                ? 'cursor-not-allowed bg-slate-100 text-slate-400 ring-slate-200'
+                                : sudahPilih
+                                  ? 'cursor-pointer bg-emerald-50 text-emerald-700 ring-emerald-100'
+                                  : 'cursor-pointer bg-rose-50 text-rose-600 ring-rose-100'
                             }`}
                           >
-                            <option value="">Pilih mekanik</option>
-                            {mekanikList.map((m) => (
-                              <option key={m.id} value={m.id}>{m.full_name}</option>
-                            ))}
+                            <option value="">
+                              {tidakAdaMekanik ? 'Tidak ada mekanik tersedia' : 'Pilih mekanik'}
+                            </option>
+                            {mekanikList.map((m) => {
+                              const alasan = alasanTidakTersedia(m, b)
+                              return (
+                                <option
+                                  key={m.id}
+                                  value={m.id}
+                                  disabled={Boolean(alasan)}
+                                  className={alasan ? 'text-slate-300' : 'text-slate-800'}
+                                >
+                                  {m.full_name}{alasan ? ` (${alasan})` : ''}
+                                </option>
+                              )
+                            })}
                           </select>
                         ) : (
                           <span className="text-slate-300">—</span>
@@ -348,15 +436,24 @@ export default function BookingServis() {
                           <button
                             onClick={() => handleKonfirmasi(b.id)}
                             disabled={!sudahPilih || confirming === b.id}
-                            title={sudahPilih ? 'Konfirmasi booking ini' : 'Pilih mekanik dulu'}
+                            title={
+                              tidakAdaMekanik
+                                ? 'Tidak ada mekanik yang tersedia di jam ini'
+                                : sudahPilih
+                                  ? 'Konfirmasi booking ini'
+                                  : 'Pilih mekanik dulu'
+                            }
                             className="rounded-full bg-[#12123a] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#1c1c52] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                           >
                             {confirming === b.id ? 'Memproses...' : 'Konfirmasi'}
                           </button>
                         ) : (
-                          <button className="rounded-full border border-slate-200 px-5 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-[#12123a] hover:text-[#12123a]">
+                          <Link
+                            to={`/admin/booking/${b.id}`}
+                            className="inline-block rounded-full border border-slate-200 px-5 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-[#12123a] hover:text-[#12123a]"
+                          >
                             Detail
-                          </button>
+                          </Link>
                         )}
                       </td>
                     </tr>

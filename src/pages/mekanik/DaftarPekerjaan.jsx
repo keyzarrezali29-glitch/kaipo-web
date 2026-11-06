@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Wrench, Settings2, Zap, Disc3, Droplet, Car, Wind, Sparkles, Phone, Calendar } from 'lucide-react'
+import { Search, Wrench, Settings2, Zap, Disc3, Droplet, Car, Wind, Sparkles, Phone, Calendar, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Avatar from '../../components/Avatar'
 
@@ -23,6 +23,14 @@ function bukaWhatsApp(phone) {
   window.open(`https://wa.me/${nomor}`, '_blank', 'noopener,noreferrer')
 }
 
+// foto_url bisa berupa URL penuh atau path di bucket kendaraan-foto; dua-duanya ditangani
+function getFotoUrl(fotoUrl) {
+  if (!fotoUrl) return null
+  if (/^https?:\/\//i.test(fotoUrl)) return fotoUrl
+  const { data } = supabase.storage.from('kendaraan-foto').getPublicUrl(fotoUrl)
+  return data?.publicUrl ?? null
+}
+
 const STATUS_LABEL = { dijadwalkan: 'Menunggu', diproses: 'Dikerjakan', selesai: 'Selesai', dibatalkan: 'Dibatalkan' }
 const STATUS_CLASS = {
   dijadwalkan: 'bg-amber-100 text-amber-700',
@@ -41,6 +49,38 @@ const TABS = [
 const PER_PAGE = 8
 
 // ------------------------------------------------------------
+// Foto kendaraan (thumbnail, klik untuk perbesar). Kalau belum ada foto / gagal dimuat -> ikon layanan.
+// ------------------------------------------------------------
+function FotoKendaraan({ url, icon, onClick }) {
+  const [gagal, setGagal] = useState(false)
+
+  if (!url || gagal) {
+    return (
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+        <IconFor name={icon} size={19} />
+      </span>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Lihat foto kendaraan"
+      className="h-20 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200 transition hover:ring-[#12123a]"
+    >
+      <img
+        src={url}
+        alt="Foto kendaraan"
+        loading="lazy"
+        onError={() => setGagal(true)}
+        className="h-full w-full object-cover"
+      />
+    </button>
+  )
+}
+
+// ------------------------------------------------------------
 // Component
 // ------------------------------------------------------------
 export default function DaftarPekerjaan() {
@@ -51,6 +91,7 @@ export default function DaftarPekerjaan() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [updatingId, setUpdatingId] = useState(null)
+  const [fotoPreview, setFotoPreview] = useState(null) // { url, label }
 
   async function loadData() {
     try {
@@ -63,7 +104,7 @@ export default function DaftarPekerjaan() {
         .select(`
           id, kode_booking, tanggal, waktu, status, catatan,
           customer:customer_id ( full_name, phone, avatar_url ),
-          kendaraan:kendaraan_id ( merek, model, plat_nomor ),
+          kendaraan:kendaraan_id ( merek, model, plat_nomor, foto_url ),
           layanan:layanan_id ( nama, icon )
         `)
         .eq('mekanik_id', user.id)
@@ -81,6 +122,16 @@ export default function DaftarPekerjaan() {
   useEffect(() => {
     loadData().finally(() => setLoading(false))
   }, [])
+
+  // Tutup preview foto dengan tombol Escape
+  useEffect(() => {
+    if (!fotoPreview) return
+    function onKey(e) {
+      if (e.key === 'Escape') setFotoPreview(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [fotoPreview])
 
   async function handleUpdateStatus(bookingId, statusBaru) {
     setUpdatingId(bookingId)
@@ -190,94 +241,102 @@ export default function DaftarPekerjaan() {
         </p>
       ) : (
         <ul className="space-y-3">
-          {paginated.map((job) => (
-            <li key={job.id} className="rounded-2xl bg-white p-5 shadow-sm">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                {/* Kiri: layanan + customer */}
-                <div className="flex flex-1 items-start gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                    <IconFor name={job.layanan?.icon} size={19} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    {/* Judul servis + status */}
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-slate-900">{job.layanan?.nama ?? '-'}</p>
-                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_CLASS[job.status]}`}>
-                        {STATUS_LABEL[job.status]}
-                      </span>
-                      <span className="font-mono text-[11px] text-slate-400">#{job.kode_booking}</span>
-                    </div>
+          {paginated.map((job) => {
+            const fotoUrl = getFotoUrl(job.kendaraan?.foto_url)
+            const namaKendaraan = [job.kendaraan?.merek, job.kendaraan?.model].filter(Boolean).join(' ')
+            const labelFoto = [namaKendaraan, job.kendaraan?.plat_nomor].filter(Boolean).join(' · ')
 
-                    {/* Nama customer */}
-                    <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2">
-                      <Avatar nama={job.customer?.full_name} url={job.customer?.avatar_url} className="h-9 w-9 text-xs" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] text-slate-400">Customer</p>
-                        <p className="truncate text-sm font-semibold text-slate-800">
-                          {job.customer?.full_name ?? '-'}
-                        </p>
+            return (
+              <li key={job.id} className="rounded-2xl bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  {/* Kiri: foto kendaraan + layanan + customer */}
+                  <div className="flex flex-1 items-start gap-3">
+                    <FotoKendaraan
+                      url={fotoUrl}
+                      icon={job.layanan?.icon}
+                      onClick={() => setFotoPreview({ url: fotoUrl, label: labelFoto })}
+                    />
+                    <div className="min-w-0 flex-1">
+                      {/* Judul servis + status */}
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-900">{job.layanan?.nama ?? '-'}</p>
+                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_CLASS[job.status]}`}>
+                          {STATUS_LABEL[job.status]}
+                        </span>
+                        <span className="font-mono text-[11px] text-slate-400">#{job.kode_booking}</span>
                       </div>
-                      {job.customer?.phone && (
-                        <button
-                          type="button"
-                          onClick={() => bukaWhatsApp(job.customer.phone)}
-                          title="Hubungi via WhatsApp"
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-                        >
-                          <Phone size={14} />
-                        </button>
+
+                      {/* Nama customer */}
+                      <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2">
+                        <Avatar nama={job.customer?.full_name} url={job.customer?.avatar_url} className="h-9 w-9 text-xs" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] text-slate-400">Customer</p>
+                          <p className="truncate text-sm font-semibold text-slate-800">
+                            {job.customer?.full_name ?? '-'}
+                          </p>
+                        </div>
+                        {job.customer?.phone && (
+                          <button
+                            type="button"
+                            onClick={() => bukaWhatsApp(job.customer.phone)}
+                            title="Hubungi via WhatsApp"
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                          >
+                            <Phone size={14} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Kendaraan + jadwal */}
+                      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate-400">
+                        <Car size={12} />
+                        {namaKendaraan || '-'}
+                        {job.kendaraan?.plat_nomor && <span>· {job.kendaraan.plat_nomor}</span>}
+                        <span className="text-slate-300">•</span>
+                        <Calendar size={12} />
+                        {formatTanggal(job.tanggal)}, {job.waktu?.slice(0, 5)} WIB
+                      </p>
+
+                      {job.catatan && (
+                        <p className="mt-2 line-clamp-1 text-xs text-slate-400">Keluhan: {job.catatan}</p>
                       )}
                     </div>
+                  </div>
 
-                    {/* Kendaraan + jadwal */}
-                    <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate-400">
-                      <Car size={12} />
-                      {[job.kendaraan?.merek, job.kendaraan?.model].filter(Boolean).join(' ') || '-'}
-                      {job.kendaraan?.plat_nomor && <span>· {job.kendaraan.plat_nomor}</span>}
-                      <span className="text-slate-300">•</span>
-                      <Calendar size={12} />
-                      {formatTanggal(job.tanggal)}, {job.waktu?.slice(0, 5)} WIB
-                    </p>
-
-                    {job.catatan && (
-                      <p className="mt-2 line-clamp-1 text-xs text-slate-400">Keluhan: {job.catatan}</p>
+                  {/* Kanan: aksi */}
+                  <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-stretch">
+                    {job.status === 'diproses' && (
+                      <button
+                        onClick={() => handleUpdateStatus(job.id, 'selesai')}
+                        disabled={updatingId === job.id}
+                        className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                      >
+                        {updatingId === job.id ? '...' : 'Tandai Selesai'}
+                      </button>
                     )}
+                    {job.status === 'dijadwalkan' && job.id === idDijadwalkanPertama && (
+                      <button
+                        onClick={() => handleUpdateStatus(job.id, 'diproses')}
+                        disabled={updatingId === job.id}
+                        className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                      >
+                        {updatingId === job.id ? '...' : 'Mulai Servis'}
+                      </button>
+                    )}
+                    {job.status === 'dijadwalkan' && job.id !== idDijadwalkanPertama && (
+                      <span className="text-center text-xs text-slate-400">Selesaikan kerjaan yang lagi jalan dulu</span>
+                    )}
+                    <Link
+                      to={`/mekanik/pekerjaan/${job.id}`}
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                    >
+                      Detail
+                    </Link>
                   </div>
                 </div>
-
-                {/* Kanan: aksi */}
-                <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-stretch">
-                  {job.status === 'diproses' && (
-                    <button
-                      onClick={() => handleUpdateStatus(job.id, 'selesai')}
-                      disabled={updatingId === job.id}
-                      className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                    >
-                      {updatingId === job.id ? '...' : 'Tandai Selesai'}
-                    </button>
-                  )}
-                  {job.status === 'dijadwalkan' && job.id === idDijadwalkanPertama && (
-                    <button
-                      onClick={() => handleUpdateStatus(job.id, 'diproses')}
-                      disabled={updatingId === job.id}
-                      className="rounded-lg bg-indigo-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                    >
-                      {updatingId === job.id ? '...' : 'Mulai Servis'}
-                    </button>
-                  )}
-                  {job.status === 'dijadwalkan' && job.id !== idDijadwalkanPertama && (
-                    <span className="text-center text-xs text-slate-400">Selesaikan kerjaan yang lagi jalan dulu</span>
-                  )}
-                  <Link
-                    to={`/mekanik/pekerjaan/${job.id}`}
-                    className="rounded-lg border border-slate-200 px-4 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                  >
-                    Detail
-                  </Link>
-                </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       )}
 
@@ -311,6 +370,34 @@ export default function DaftarPekerjaan() {
             >
               ›
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal preview foto kendaraan */}
+      {fotoPreview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+          onClick={() => setFotoPreview(null)}
+        >
+          <div
+            className="relative w-full max-w-2xl rounded-3xl bg-white p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setFotoPreview(null)}
+              title="Tutup"
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+            >
+              <X size={16} />
+            </button>
+            <p className="mb-4 pr-12 text-[15px] font-semibold text-slate-900">{fotoPreview.label || 'Foto kendaraan'}</p>
+            <img
+              src={fotoPreview.url}
+              alt="Foto kendaraan"
+              className="max-h-[70vh] w-full rounded-2xl object-contain"
+            />
           </div>
         </div>
       )}
