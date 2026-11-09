@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Avatar from '../../components/Avatar'
+import SparepartServis from '../../components/SparepartServis'
 
 // ------------------------------------------------------------
 // Helpers
@@ -245,6 +246,11 @@ export default function DetailBookingAdmin() {
               )}
             </div>
           </div>
+
+          {/* Sparepart yang dicatat mekanik (hanya lihat) */}
+          {(booking.status === 'diproses' || booking.status === 'selesai') && (
+            <SparepartServis bookingId={booking.id} status={booking.status} readOnly />
+          )}
 
           {/* Timeline */}
           <div className="rounded-3xl bg-white p-6">

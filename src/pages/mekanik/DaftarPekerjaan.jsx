@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Wrench, Settings2, Zap, Disc3, Droplet, Car, Wind, Sparkles, Phone, Calendar, X } from 'lucide-react'
+import { Search, Wrench, Settings2, Zap, Disc3, Droplet, Car, Wind, Sparkles, Phone, Calendar, X, Package } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Avatar from '../../components/Avatar'
+import SparepartServis from '../../components/SparepartServis'
 
 const ICON_MAP = { wrench: Wrench, engine: Settings2, bolt: Zap, wheel: Disc3, oil: Droplet, car: Car, aircon: Wind, sparkles: Sparkles }
 function IconFor({ name, size = 16 }) {
@@ -92,6 +93,7 @@ export default function DaftarPekerjaan() {
   const [page, setPage] = useState(1)
   const [updatingId, setUpdatingId] = useState(null)
   const [fotoPreview, setFotoPreview] = useState(null) // { url, label }
+  const [sparepartJobId, setSparepartJobId] = useState(null) // id booking yang sparepartnya sedang dibuka
 
   async function loadData() {
     try {
@@ -123,15 +125,18 @@ export default function DaftarPekerjaan() {
     loadData().finally(() => setLoading(false))
   }, [])
 
-  // Tutup preview foto dengan tombol Escape
+  // Tutup modal (foto kendaraan / sparepart) dengan tombol Escape
   useEffect(() => {
-    if (!fotoPreview) return
+    if (!fotoPreview && !sparepartJobId) return
     function onKey(e) {
-      if (e.key === 'Escape') setFotoPreview(null)
+      if (e.key === 'Escape') {
+        setFotoPreview(null)
+        setSparepartJobId(null)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [fotoPreview])
+  }, [fotoPreview, sparepartJobId])
 
   async function handleUpdateStatus(bookingId, statusBaru) {
     setUpdatingId(bookingId)
@@ -179,6 +184,8 @@ export default function DaftarPekerjaan() {
     }
     return rows
   }, [bookingList, activeTab, search])
+
+  const jobSparepart = bookingList.find((b) => b.id === sparepartJobId) ?? null
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
   const pageSafe = Math.min(page, totalPages)
@@ -326,6 +333,16 @@ export default function DaftarPekerjaan() {
                     {job.status === 'dijadwalkan' && job.id !== idDijadwalkanPertama && (
                       <span className="text-center text-xs text-slate-400">Selesaikan kerjaan yang lagi jalan dulu</span>
                     )}
+                    {(job.status === 'diproses' || job.status === 'selesai') && (
+                      <button
+                        type="button"
+                        onClick={() => setSparepartJobId(job.id)}
+                        className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                      >
+                        <Package size={13} />
+                        {job.status === 'diproses' ? 'Catat Sparepart' : 'Lihat Sparepart'}
+                      </button>
+                    )}
                     <Link
                       to={`/mekanik/pekerjaan/${job.id}`}
                       className="rounded-lg border border-slate-200 px-4 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50"
@@ -398,6 +415,35 @@ export default function DaftarPekerjaan() {
               alt="Foto kendaraan"
               className="max-h-[70vh] w-full rounded-2xl object-contain"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modal sparepart servis */}
+      {jobSparepart && (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 p-4"
+          onClick={() => setSparepartJobId(null)}
+        >
+          <div className="relative mx-auto mt-[8vh] w-full max-w-xl" onClick={(e) => e.stopPropagation()}>
+            <p className="mb-2 text-xs font-medium text-white/80">
+              #{jobSparepart.kode_booking} · {jobSparepart.layanan?.nama ?? '-'}
+            </p>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSparepartJobId(null)}
+                title="Tutup"
+                className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+              >
+                <X size={16} />
+              </button>
+              <SparepartServis
+                bookingId={jobSparepart.id}
+                status={jobSparepart.status}
+                readOnly={jobSparepart.status !== 'diproses'}
+              />
+            </div>
           </div>
         </div>
       )}
