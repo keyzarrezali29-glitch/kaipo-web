@@ -88,7 +88,8 @@ export default function AdminLayout() {
           <span className="text-xl font-bold tracking-wider text-white">KAI-PO</span>
         </div>
 
-        <nav className="flex-1 space-y-6 overflow-y-auto pr-1">
+        {/* Menu tetap bisa di-scroll (mouse / trackpad), tapi scrollbar-nya disembunyikan */}
+        <nav className="flex-1 space-y-6 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
               <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">

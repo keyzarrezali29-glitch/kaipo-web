@@ -13,6 +13,20 @@ function formatTanggal(tanggalStr) {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
 
+// Kapan booking dibuat customer (bukan jadwal servis), dalam zona waktu WIB
+function formatDibuat(ts) {
+  if (!ts) return { tanggal: '-', jam: '' }
+  const d = new Date(ts)
+  const tanggal = d.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short' })
+  const jam = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jakarta',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(d)
+  return { tanggal, jam: `${jam} WIB` }
+}
+
 function getTodayISO() {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
@@ -76,25 +90,30 @@ export default function BookingServis() {
   // pilihan mekanik yang belum dikonfirmasi, per booking id
   const [pilihMekanik, setPilihMekanik] = useState({})
   const [confirming, setConfirming] = useState(null)
+  // riwayat penolakan mekanik: { booking_id: [{ mekanik_id, alasan, nama }] } (terbaru di index 0)
+  const [penolakanMap, setPenolakanMap] = useState({})
 
   async function loadData() {
     try {
       setError(null)
-      const [bookingRes, layananRes, mekanikRes, detailRes] = await Promise.all([
+      const [bookingRes, layananRes, mekanikRes, detailRes, penolakanRes] = await Promise.all([
         supabase
           .from('booking')
           .select(`
-            id, kode_booking, tanggal, waktu, status, mekanik_id,
+            id, kode_booking, created_at, tanggal, waktu, status, mekanik_id,
             customer:customer_id ( full_name, avatar_url ),
             kendaraan:kendaraan_id ( merek, model ),
             layanan:layanan_id ( id, nama ),
             mekanik:mekanik_id ( full_name, avatar_url )
           `)
-          .order('tanggal', { ascending: false })
-          .order('waktu', { ascending: false }),
+          .order('created_at', { ascending: false }),
         supabase.from('layanan').select('id, nama').eq('is_active', true).order('nama'),
         supabase.from('profiles').select('id, full_name, is_active').eq('role', 'mekanik').order('full_name'),
         supabase.from('mekanik_detail').select('profile_id, status_kerja'),
+        supabase
+          .from('booking_penolakan')
+          .select('booking_id, mekanik_id, alasan, created_at, mekanik:mekanik_id ( full_name )')
+          .order('created_at', { ascending: false }),
       ])
 
       if (bookingRes.error) throw bookingRes.error
@@ -103,10 +122,19 @@ export default function BookingServis() {
       // Status kerja tidak fatal: kalau gagal dimuat, semua mekanik dianggap tersedia
       if (detailRes.error) console.warn('Gagal memuat status kerja mekanik:', detailRes.error)
 
+      // Riwayat penolakan tidak fatal: kalau gagal dimuat, halaman tetap jalan
+      if (penolakanRes.error) console.warn('Gagal memuat riwayat penolakan:', penolakanRes.error)
+      const tolakMap = {}
+      for (const r of penolakanRes.data ?? []) {
+        if (!tolakMap[r.booking_id]) tolakMap[r.booking_id] = []
+        tolakMap[r.booking_id].push({ mekanik_id: r.mekanik_id, alasan: r.alasan, nama: r.mekanik?.full_name ?? 'Mekanik' })
+      }
+
       const statusMap = {}
       for (const d of detailRes.data ?? []) statusMap[d.profile_id] = d.status_kerja
 
       setBookings(bookingRes.data ?? [])
+      setPenolakanMap(tolakMap)
       setLayananList(layananRes.data ?? [])
       setMekanikList(
         (mekanikRes.data ?? [])
@@ -150,6 +178,7 @@ export default function BookingServis() {
 
   // Alasan mekanik tidak bisa dipilih untuk booking tertentu (null = bisa dipilih)
   function alasanTidakTersedia(m, b) {
+    if (penolakanMap[b.id]?.some((p) => p.mekanik_id === m.id)) return 'menolak booking ini'
     if (jadwalMekanik.get(kunciSlot(b))?.has(m.id)) return 'sudah ada jadwal'
     if (m.status_kerja === 'libur') return 'libur'
     return null
@@ -328,7 +357,8 @@ export default function BookingServis() {
                 <tr className="bg-slate-50 text-left text-xs text-slate-500">
                   <th className="rounded-l-2xl px-5 py-3.5 font-medium">Customer</th>
                   <th className="px-4 py-3.5 font-medium">Layanan</th>
-                  <th className="px-4 py-3.5 font-medium">Jadwal</th>
+                  <th className="px-4 py-3.5 font-medium">Waktu booking</th>
+                  <th className="px-4 py-3.5 font-medium">Jadwal servis</th>
                   <th className="px-4 py-3.5 font-medium">Mekanik</th>
                   <th className="px-4 py-3.5 font-medium">Status</th>
                   <th className="rounded-r-2xl px-5 py-3.5"></th>
@@ -337,6 +367,9 @@ export default function BookingServis() {
               <tbody>
                 {paginated.map((b) => {
                   const menunggu = b.status === 'menunggu_konfirmasi'
+                  const dibuat = formatDibuat(b.created_at)
+                  // Penolakan terakhir (hanya relevan selama booking kembali menunggu konfirmasi)
+                  const ditolak = menunggu ? penolakanMap[b.id]?.[0] ?? null : null
 
                   // Ketersediaan mekanik untuk tanggal + jam booking ini
                   const jumlahTersedia = mekanikList.filter((m) => !alasanTidakTersedia(m, b)).length
@@ -349,7 +382,7 @@ export default function BookingServis() {
                     <tr
                       key={b.id}
                       className={`border-b border-slate-100 transition last:border-0 hover:bg-slate-50/70 ${
-                        menunggu ? 'bg-blue-50/30' : ''
+                        menunggu ? (ditolak ? 'bg-rose-50/50' : 'bg-blue-50/30') : ''
                       }`}
                     >
                       <td className="px-5 py-4">
@@ -370,6 +403,11 @@ export default function BookingServis() {
                       </td>
 
                       <td className="px-4 py-4">
+                        <p className="font-medium text-slate-800">{dibuat.tanggal}</p>
+                        <p className="mt-0.5 text-xs text-slate-400">{dibuat.jam}</p>
+                      </td>
+
+                      <td className="px-4 py-4">
                         <p className="font-medium text-slate-800">{formatTanggal(b.tanggal)}</p>
                         <p className="mt-0.5 text-xs text-slate-400">{b.waktu ? `${b.waktu.slice(0, 5)} WIB` : '-'}</p>
                       </td>
@@ -381,6 +419,7 @@ export default function BookingServis() {
                             <span className="font-medium text-slate-700">{b.mekanik.full_name}</span>
                           </div>
                         ) : menunggu ? (
+                          <div className="space-y-1.5">
                           <select
                             value={sudahPilih ? pilihMekanik[b.id] : ''}
                             disabled={tidakAdaMekanik}
@@ -415,6 +454,12 @@ export default function BookingServis() {
                               )
                             })}
                           </select>
+                          {ditolak && (
+                            <p className="line-clamp-2 max-w-[230px] text-[11px] leading-snug text-rose-600" title={ditolak.alasan}>
+                              <span className="font-semibold">Ditolak {ditolak.nama}:</span> {ditolak.alasan}
+                            </p>
+                          )}
+                          </div>
                         ) : (
                           <span className="text-slate-300">—</span>
                         )}
