@@ -79,8 +79,8 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* Sidebar floating */}
-      <aside className="no-print fixed bottom-4 left-4 top-4 z-50 flex w-60 flex-col rounded-3xl bg-[#12123a] px-4 py-6 shadow-2xl">
+      {/* Sidebar menempel di sisi kiri layar (tidak melayang) */}
+      <aside className="no-print fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-[#12123a] px-4 py-6">
         <div className="mb-8 flex items-center gap-3 px-2">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 p-2">
             <img src={logoKaipo} alt="Kai-Po" className="h-full w-full object-contain" />
@@ -140,7 +140,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Konten */}
-      <main className="ml-[17.5rem] min-h-screen">
+      <main className="ml-60 min-h-screen">
         <div className="no-print flex items-center justify-end gap-3 px-8 pt-6">
           <NotifikasiBell />
           <div className="flex items-center gap-3 rounded-full bg-white py-1.5 pl-1.5 pr-5">

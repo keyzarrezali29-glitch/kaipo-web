@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Wrench, CalendarDays, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Tag, X, MapPin, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { mulaiPembayaran } from '../../lib/bayar'
 
 const HARI = ['S', 'S', 'R', 'K', 'J', 'S', 'M']
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
@@ -323,13 +324,53 @@ function BuatBookingTab() {
         throw error
       }
 
-      setNotice({ type: 'success', message: `Booking berhasil diajukan! Kode: ${data.kode_booking}` })
+      const kodeBooking = data.kode_booking
+      const bookingId = data.id
       setSelectedLayanan(null)
       setSelectedTanggal(null)
       setSelectedJam(null)
       setCatatan('')
       hapusPromo()
       await muatSlotTerisi()
+
+      // Booking tersimpan -> langsung bayar. Admin baru bisa menugaskan mekanik setelah lunas.
+      setNotice({ type: 'success', message: `Booking ${kodeBooking} tersimpan. Menyiapkan pembayaran...` })
+      let selesai = false
+      try {
+        await mulaiPembayaran(bookingId, {
+          onSuccess: () => {
+            selesai = true
+            setNotice({ type: 'success', message: `Pembayaran berhasil! Booking ${kodeBooking} menunggu konfirmasi admin.` })
+          },
+          onPending: () => {
+            selesai = true
+            setNotice({
+              type: 'success',
+              message: `Menunggu pembayaran selesai. Booking ${kodeBooking} diproses admin setelah pembayaran diterima.`,
+            })
+          },
+          onError: () => {
+            selesai = true
+            setNotice({
+              type: 'error',
+              message: `Pembayaran gagal. Booking ${kodeBooking} tetap tersimpan, bayar ulang dari tab Riwayat Booking.`,
+            })
+          },
+          onClose: () => {
+            if (!selesai) {
+              setNotice({
+                type: 'error',
+                message: `Pembayaran belum diselesaikan. Booking ${kodeBooking} baru bisa diproses setelah dibayar. Lanjutkan dari tab Riwayat Booking dalam 30 menit supaya jadwalnya tidak dilepas.`,
+              })
+            }
+          },
+        })
+      } catch (payErr) {
+        setNotice({
+          type: 'error',
+          message: `Booking ${kodeBooking} tersimpan, tapi pembayaran gagal dimulai: ${payErr.message}. Bayar dari tab Riwayat Booking.`,
+        })
+      }
     } catch (err) {
       setNotice({ type: 'error', message: err.message || 'Gagal membuat booking.' })
     } finally {
@@ -616,12 +657,15 @@ function BuatBookingTab() {
             )}
           </div>
 
+          <p className="mb-3 text-[11px] leading-relaxed text-slate-400">
+            Pembayaran dilakukan langsung setelah booking diajukan. Mekanik baru ditugaskan setelah pembayaran lunas.
+          </p>
           <button
             onClick={handleAjukan}
             disabled={submitting}
             className="w-full rounded-full bg-[#12123a] py-3.5 text-sm font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
           >
-            {submitting ? 'Memproses...' : 'Ajukan Booking'}
+            {submitting ? 'Memproses...' : 'Ajukan & Bayar'}
           </button>
         </div>
       </div>
@@ -635,20 +679,67 @@ function BuatBookingTab() {
 function RiwayatBookingTab() {
   const [loading, setLoading] = useState(true)
   const [bookings, setBookings] = useState([])
+  const [lunasSet, setLunasSet] = useState(new Set())
+  const [payingId, setPayingId] = useState(null)
+  const [notice, setNotice] = useState({ type: '', message: '' })
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      const { data, error } = await supabase
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser()
+    const [bookingRes, trxRes] = await Promise.all([
+      supabase
         .from('booking')
         .select(`*, kendaraan:kendaraan_id ( merek, model, plat_nomor ), layanan:layanan_id ( nama )`)
         .eq('customer_id', user.id)
-        .order('tanggal', { ascending: false })
-      if (!error) setBookings(data ?? [])
-      setLoading(false)
-    }
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('transaksi')
+        .select('booking_id')
+        .eq('customer_id', user.id)
+        .eq('jenis', 'servis')
+        .eq('status', 'berhasil'),
+    ])
+    if (!bookingRes.error) setBookings(bookingRes.data ?? [])
+    setLunasSet(new Set((trxRes.data ?? []).map((t) => t.booking_id)))
+    setLoading(false)
+  }
+
+  useEffect(() => {
     load()
   }, [])
+
+  async function bayarSekarang(e, b) {
+    // Kartu ini berupa link ke detail booking; tombol bayar tidak boleh ikut membuka halaman detail
+    e.preventDefault()
+    e.stopPropagation()
+    setNotice({ type: '', message: '' })
+    setPayingId(b.id)
+    let selesai = false
+    try {
+      await mulaiPembayaran(b.id, {
+        onSuccess: () => {
+          selesai = true
+          setNotice({ type: 'success', message: `Pembayaran booking ${b.kode_booking} berhasil. Menunggu konfirmasi admin.` })
+          setTimeout(load, 2500)
+        },
+        onPending: () => {
+          selesai = true
+          setNotice({ type: 'success', message: `Menunggu pembayaran booking ${b.kode_booking} selesai.` })
+          setTimeout(load, 2500)
+        },
+        onError: () => {
+          selesai = true
+          setNotice({ type: 'error', message: 'Pembayaran gagal. Coba lagi atau pilih metode lain.' })
+        },
+        onClose: () => {
+          if (!selesai) setNotice({ type: 'error', message: 'Pembayaran belum diselesaikan.' })
+        },
+      })
+    } catch (err) {
+      setNotice({ type: 'error', message: err.message || 'Gagal memulai pembayaran.' })
+    } finally {
+      setPayingId(null)
+    }
+  }
 
   if (loading) {
     return <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">Memuat riwayat...</div>
@@ -660,29 +751,58 @@ function RiwayatBookingTab() {
 
   return (
     <div className="space-y-3">
-      {bookings.map((b) => (
-        <Link
-          key={b.id}
-          to={`/customer/booking/${b.id}`}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white p-5 transition hover:shadow-md"
-        >
-          <div className="flex items-center gap-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[#12123a]">
-              <Wrench size={17} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">{b.layanan?.nama ?? '-'}</p>
-              <p className="text-xs text-slate-400">
-                {[b.kendaraan?.merek, b.kendaraan?.model].filter(Boolean).join(' ')} {b.kendaraan?.plat_nomor}
-              </p>
-              <p className="text-xs text-slate-400">{formatTanggal(b.tanggal)} · {b.waktu?.slice(0, 5)} WIB</p>
+      <Notice type={notice.type} message={notice.message} />
+      {bookings.map((b) => {
+        const lunas = lunasSet.has(b.id)
+        const belumBayar = b.status === 'menunggu_konfirmasi' && !lunas
+        return (
+          <Link
+            key={b.id}
+            to={`/customer/booking/${b.id}`}
+            className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white p-5 transition hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[#12123a]">
+                <Wrench size={17} />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{b.layanan?.nama ?? '-'}</p>
+                <p className="text-xs text-slate-400">
+                  {[b.kendaraan?.merek, b.kendaraan?.model].filter(Boolean).join(' ')} {b.kendaraan?.plat_nomor}
+                </p>
+                <p className="text-xs text-slate-400">{formatTanggal(b.tanggal)} · {b.waktu?.slice(0, 5)} WIB</p>
+              </div>
             </div>
-          </div>
-          <span className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${STATUS_CLASS[b.status]}`}>
-            {STATUS_LABEL[b.status]}
-          </span>
-        </Link>
-      ))}
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                {belumBayar && (
+                  <span className="rounded-md bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-100">
+                    Belum dibayar
+                  </span>
+                )}
+                {lunas && b.status !== 'dibatalkan' && (
+                  <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
+                    Lunas
+                  </span>
+                )}
+                <span className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${STATUS_CLASS[b.status]}`}>
+                  {STATUS_LABEL[b.status]}
+                </span>
+              </div>
+              {belumBayar && (
+                <button
+                  type="button"
+                  onClick={(e) => bayarSekarang(e, b)}
+                  disabled={payingId === b.id}
+                  className="rounded-full bg-[#12123a] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[#1c1c52] disabled:opacity-50"
+                >
+                  {payingId === b.id ? 'Memproses...' : 'Bayar Sekarang'}
+                </button>
+              )}
+            </div>
+          </Link>
+        )
+      })}
     </div>
   )
 }

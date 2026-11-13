@@ -17,6 +17,15 @@ function formatTanggal(tanggalStr) {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+// Tanggal + jam dalam WIB, contoh: "11 Nov 2026, 10:23 WIB"
+function formatTanggalJam(ts) {
+  if (!ts) return '-'
+  const d = new Date(ts)
+  const tanggal = d.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', year: 'numeric' })
+  const jam = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d)
+  return `${tanggal}, ${jam} WIB`
+}
+
 function bukaWhatsApp(phone) {
   let nomor = String(phone || '').replace(/\D/g, '')
   if (!nomor) return
@@ -45,6 +54,7 @@ const TABS = [
   { key: 'dijadwalkan', label: 'Menunggu' },
   { key: 'diproses', label: 'Dikerjakan' },
   { key: 'selesai', label: 'Selesai' },
+  { key: 'ditolak', label: 'Ditolak' },
 ]
 
 const PER_PAGE = 8
@@ -94,6 +104,11 @@ export default function DaftarPekerjaan() {
   const [updatingId, setUpdatingId] = useState(null)
   const [fotoPreview, setFotoPreview] = useState(null) // { url, label }
   const [sparepartJobId, setSparepartJobId] = useState(null) // id booking yang sparepartnya sedang dibuka
+  const [tolakJobId, setTolakJobId] = useState(null) // id booking yang sedang akan ditolak
+  const [alasanTolak, setAlasanTolak] = useState('')
+  const [tolakError, setTolakError] = useState('')
+  const [menolak, setMenolak] = useState(false)
+  const [penolakanList, setPenolakanList] = useState([]) // booking yang pernah kutolak
 
   async function loadData() {
     try {
@@ -115,6 +130,11 @@ export default function DaftarPekerjaan() {
 
       if (fetchError) throw fetchError
       setBookingList(data ?? [])
+
+      // Booking yang pernah ditolak mekanik ini (lewat fungsi database, karena booking-nya sudah bukan miliknya lagi)
+      const { data: tolakData, error: tolakErr } = await supabase.rpc('get_penolakan_saya')
+      if (tolakErr) console.warn('Gagal memuat riwayat penolakan:', tolakErr)
+      else setPenolakanList(tolakData ?? [])
     } catch (err) {
       console.error('Gagal memuat daftar pekerjaan:', err)
       setError(err.message || 'Gagal memuat daftar pekerjaan')
@@ -127,16 +147,17 @@ export default function DaftarPekerjaan() {
 
   // Tutup modal (foto kendaraan / sparepart) dengan tombol Escape
   useEffect(() => {
-    if (!fotoPreview && !sparepartJobId) return
+    if (!fotoPreview && !sparepartJobId && !tolakJobId) return
     function onKey(e) {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !menolak) {
         setFotoPreview(null)
         setSparepartJobId(null)
+        setTolakJobId(null)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [fotoPreview, sparepartJobId])
+  }, [fotoPreview, sparepartJobId, tolakJobId, menolak])
 
   async function handleUpdateStatus(bookingId, statusBaru) {
     setUpdatingId(bookingId)
@@ -148,6 +169,28 @@ export default function DaftarPekerjaan() {
       alert('Gagal update status: ' + err.message)
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  async function handleTolak() {
+    setTolakError('')
+    const alasan = alasanTolak.trim()
+    if (alasan.length < 5) {
+      setTolakError('Tulis alasan penolakan (minimal 5 karakter) supaya admin bisa menugaskan mekanik lain.')
+      return
+    }
+    setMenolak(true)
+    try {
+      const { error: rpcError } = await supabase.rpc('tolak_booking', { p_booking_id: tolakJobId, p_alasan: alasan })
+      if (rpcError) throw rpcError
+      setTolakJobId(null)
+      setAlasanTolak('')
+      await loadData()
+    } catch (err) {
+      console.error('Gagal menolak booking:', err)
+      setTolakError(err.message || 'Gagal menolak booking.')
+    } finally {
+      setMenolak(false)
     }
   }
 
@@ -186,6 +229,17 @@ export default function DaftarPekerjaan() {
   }, [bookingList, activeTab, search])
 
   const jobSparepart = bookingList.find((b) => b.id === sparepartJobId) ?? null
+  const jobTolak = bookingList.find((b) => b.id === tolakJobId) ?? null
+
+  const ditolakFiltered = penolakanList.filter((t) => {
+    if (!search.trim()) return true
+    const q = search.trim().toLowerCase()
+    return (
+      t.kode_booking?.toLowerCase().includes(q) ||
+      t.customer?.toLowerCase().includes(q) ||
+      t.plat_nomor?.toLowerCase().includes(q)
+    )
+  })
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
   const pageSafe = Math.min(page, totalPages)
@@ -223,7 +277,7 @@ export default function DaftarPekerjaan() {
             >
               {tab.label}
               <span className={`rounded-full px-1.5 py-0.5 text-xs ${activeTab === tab.key ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>
-                {counts[tab.key] ?? 0}
+                {tab.key === 'ditolak' ? penolakanList.length : counts[tab.key] ?? 0}
               </span>
             </button>
           ))}
@@ -242,7 +296,63 @@ export default function DaftarPekerjaan() {
       </div>
 
       {/* List */}
-      {paginated.length === 0 ? (
+      {activeTab === 'ditolak' ? (
+        ditolakFiltered.length === 0 ? (
+          <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-slate-400 shadow-sm">
+            Belum ada booking yang kamu tolak.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {ditolakFiltered.map((t) => {
+              let statusTeks = 'Menunggu penugasan ulang oleh admin'
+              let statusClass = 'bg-amber-100 text-amber-700'
+              if (t.sudah_dialihkan) {
+                statusTeks = 'Sudah ditugaskan ke mekanik lain'
+                statusClass = 'bg-emerald-100 text-emerald-700'
+              } else if (t.status_sekarang === 'dibatalkan') {
+                statusTeks = 'Booking dibatalkan'
+                statusClass = 'bg-slate-100 text-slate-500'
+              }
+              return (
+                <li key={t.id} className="rounded-2xl bg-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-900">{t.layanan ?? '-'}</p>
+                        <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-semibold text-rose-700">
+                          Ditolak
+                        </span>
+                        <span className="font-mono text-[11px] text-slate-400">#{t.kode_booking}</span>
+                      </div>
+                      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate-400">
+                        <Car size={12} />
+                        {t.kendaraan || '-'}
+                        {t.plat_nomor && <span>· {t.plat_nomor}</span>}
+                        <span className="text-slate-300">•</span>
+                        <Calendar size={12} />
+                        {formatTanggal(t.tanggal)}, {t.waktu} WIB
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Customer: <span className="font-medium text-slate-600">{t.customer ?? '-'}</span>
+                      </p>
+                      <div className="mt-3 rounded-xl bg-rose-50 px-3 py-2.5 text-xs text-rose-700">
+                        <p className="font-semibold">Alasan penolakan</p>
+                        <p className="mt-0.5 whitespace-pre-line">{t.alasan}</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 sm:text-right">
+                      <p className="text-[11px] text-slate-400">Ditolak {formatTanggalJam(t.ditolak_pada)}</p>
+                      <span className={`mt-1.5 inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusClass}`}>
+                        {statusTeks}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )
+      ) : paginated.length === 0 ? (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-slate-400 shadow-sm">
           Nggak ada pekerjaan yang cocok dengan filter ini.
         </p>
@@ -332,6 +442,19 @@ export default function DaftarPekerjaan() {
                     )}
                     {job.status === 'dijadwalkan' && job.id !== idDijadwalkanPertama && (
                       <span className="text-center text-xs text-slate-400">Selesaikan kerjaan yang lagi jalan dulu</span>
+                    )}
+                    {job.status === 'dijadwalkan' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTolakJobId(job.id)
+                          setAlasanTolak('')
+                          setTolakError('')
+                        }}
+                        className="rounded-lg border border-rose-200 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                      >
+                        Tolak
+                      </button>
                     )}
                     {(job.status === 'diproses' || job.status === 'selesai') && (
                       <button
@@ -443,6 +566,58 @@ export default function DaftarPekerjaan() {
                 status={jobSparepart.status}
                 readOnly={jobSparepart.status !== 'diproses'}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal tolak booking */}
+      {jobTolak && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+          onClick={() => !menolak && setTolakJobId(null)}
+        >
+          <div className="w-full max-w-md rounded-3xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[15px] font-semibold text-slate-900">Tolak booking</h3>
+            <p className="mt-1 text-xs text-slate-400">
+              #{jobTolak.kode_booking} · {jobTolak.layanan?.nama ?? '-'} · {formatTanggal(jobTolak.tanggal)}, {jobTolak.waktu?.slice(0, 5)} WIB
+            </p>
+
+            <label className="mb-1.5 mt-5 block text-xs font-semibold text-slate-600">Alasan penolakan</label>
+            <textarea
+              value={alasanTolak}
+              onChange={(e) => setAlasanTolak(e.target.value)}
+              rows={4}
+              maxLength={300}
+              placeholder="Contoh: jadwal bentrok dengan servis lain, sedang tidak enak badan."
+              className="w-full rounded-2xl border border-slate-200 p-4 text-sm outline-none focus:border-[#12123a]"
+            />
+
+            {tolakError && (
+              <p className="mt-2 rounded-2xl bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">{tolakError}</p>
+            )}
+
+            <p className="mt-3 text-[11px] text-slate-400">
+              Booking akan kembali ke admin beserta alasanmu, lalu ditugaskan ke mekanik lain.
+            </p>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setTolakJobId(null)}
+                disabled={menolak}
+                className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleTolak}
+                disabled={menolak}
+                className="flex-1 rounded-full bg-rose-600 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
+              >
+                {menolak ? 'Memproses...' : 'Tolak Booking'}
+              </button>
             </div>
           </div>
         </div>
