@@ -143,7 +143,14 @@ export default function DetailBookingAdmin() {
   }
 
   async function batalkanBooking() {
-    if (!window.confirm(`Batalkan booking ${booking.kode_booking}? Customer akan diberi tahu lewat notifikasi.`)) return
+    const dibayar = transaksiList
+      .filter((t) => t.status === 'berhasil')
+      .reduce((sum, t) => sum + Number(t.total || 0), 0)
+    const pesanKonfirmasi =
+      dibayar > 0
+        ? `Booking ${booking.kode_booking} sudah dibayar ${formatRupiah(dibayar)}. Jika dibatalkan, pembayaran ditandai REFUND dan dana harus dikembalikan ke customer. Lanjutkan?`
+        : `Batalkan booking ${booking.kode_booking}? Customer akan diberi tahu lewat notifikasi.`
+    if (!window.confirm(pesanKonfirmasi)) return
     setMembatalkan(true)
     try {
       const { error: updateError } = await supabase.from('booking').update({ status: 'dibatalkan' }).eq('id', id)
@@ -177,7 +184,8 @@ export default function DetailBookingAdmin() {
   const promoMatch = booking.catatan?.match(REGEX_PROMO)
   const catatanBersih = booking.catatan?.replace(REGEX_PROMO, '').trim()
   const sudahLunas = transaksiList.some((t) => t.status === 'berhasil')
-  const bisaBatal = booking.status === 'dijadwalkan'
+  const bisaBatal = booking.status === 'dijadwalkan' || booking.status === 'menunggu_konfirmasi'
+  const adaRefund = transaksiList.some((t) => t.status === 'refund')
   const biayaTampil = booking.biaya_final ?? booking.biaya_estimasi ?? booking.layanan?.harga
   const biayaSudahFinal = booking.biaya_final !== null && booking.biaya_final !== undefined
 
@@ -324,6 +332,13 @@ export default function DetailBookingAdmin() {
               <p className="relative mt-1 text-2xl font-bold tracking-tight">{formatRupiah(biayaTampil)}</p>
             </div>
 
+            {booking.status === 'menunggu_konfirmasi' && !sudahLunas && (
+              <div className="mb-4 flex items-start gap-2 rounded-2xl bg-amber-50 p-3 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-100">
+                <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                <span>Customer belum membayar. Booking belum bisa dikonfirmasi dan ditugaskan ke mekanik.</span>
+              </div>
+            )}
+
             {booking.status !== 'dibatalkan' && !sudahLunas && (
               <div className="mb-4">
                 <label className="mb-1.5 block text-xs font-semibold text-slate-600">Atur biaya final (Rp)</label>
@@ -362,6 +377,13 @@ export default function DetailBookingAdmin() {
             {sudahLunas && (
               <div className="mb-4 flex items-center justify-center gap-2 rounded-full bg-emerald-50 py-3 text-sm font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
                 <CheckCircle2 size={16} /> Sudah Dibayar
+              </div>
+            )}
+
+            {booking.status === 'dibatalkan' && adaRefund && (
+              <div className="mb-4 flex items-start gap-2 rounded-2xl bg-slate-50 p-3 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-100">
+                <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                <span>Booking dibatalkan. Pembayaran ditandai Refund dan perlu dikembalikan ke customer.</span>
               </div>
             )}
 
